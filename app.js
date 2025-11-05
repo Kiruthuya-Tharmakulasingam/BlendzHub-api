@@ -9,6 +9,7 @@ import feedbackRoutes from "./routes/feedbackRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/staffs", staffRoutes);
+app.use("/api/users", userRoutes);
 
 // Start server
 app.listen(PORT, () => {
