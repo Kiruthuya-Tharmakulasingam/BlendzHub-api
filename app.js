@@ -10,6 +10,7 @@ import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import errorHandler from "./middleware/errorhandler.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/staffs", staffRoutes);
 app.use("/api/users", userRoutes);
+app.use(errorHandler);
 
 // Start server
 app.listen(PORT, () => {
