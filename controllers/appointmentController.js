@@ -1,11 +1,23 @@
 import Appointment from "../models/appointment.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
+// Get all appointments
 export const getAllAppointments = asyncHandler(async (req, res) => {
-  const appointments = await Appointment.find().populate(
-    "customerId staffId serviceId"
-  );
-  res.status(200).json(appointments);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Appointment, page, limit, [
+    { path: "customerId", model: "Customer" },
+    { path: "staffId", model: "Staff" },
+    { path: "serviceId", model: "Service" },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Appointments fetched successfully",
+    ...result,
+  });
 });
 
 export const getAppointmentById = asyncHandler(async (req, res) => {

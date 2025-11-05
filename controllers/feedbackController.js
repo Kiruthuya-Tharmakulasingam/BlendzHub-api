@@ -1,9 +1,21 @@
 import Feedback from "../models/feedback.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
 export const getAllFeedback = asyncHandler(async (req, res) => {
-  const feedback = await Feedback.find().populate("customerId appointmentId");
-  res.status(200).json(feedback);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Feedback, page, limit, [
+    { path: "customerId", model: "Customer" },
+    { path: "appointmentId", model: "Appointment" },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Feedback fetched successfully",
+    ...result,
+  });
 });
 
 export const getFeedbackById = asyncHandler(async (req, res) => {

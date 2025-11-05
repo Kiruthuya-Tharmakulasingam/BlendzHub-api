@@ -1,10 +1,18 @@
 import Service from "../models/service.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
-// GET all services
 export const getAllServices = asyncHandler(async (req, res) => {
-  const services = await Service.find();
-  res.status(200).json(services);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Service, page, limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Services fetched successfully",
+    ...result,
+  });
 });
 
 // GET single service by ID

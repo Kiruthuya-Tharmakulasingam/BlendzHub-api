@@ -1,9 +1,18 @@
 import Product from "../models/product.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
 export const getAllProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find();
-  res.status(200).json(products);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Product, page, limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Products fetched successfully",
+    ...result,
+  });
 });
 
 export const getProductById = asyncHandler(async (req, res) => {

@@ -1,10 +1,18 @@
 import Customer from "../models/customer.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
-// GET all customers
 export const getAllCustomers = asyncHandler(async (req, res) => {
-  const customers = await Customer.find();
-  res.status(200).json(customers);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Customer, page, limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Customers fetched successfully",
+    ...result,
+  });
 });
 
 // GET customer by ID

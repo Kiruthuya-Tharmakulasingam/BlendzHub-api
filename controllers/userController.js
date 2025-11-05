@@ -1,10 +1,18 @@
 import User from "../models/user.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
-// Get all users
 export const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find();
-  res.status(200).json(users);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(User, page, limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Users fetched successfully",
+    ...result,
+  });
 });
 
 // Get user by ID

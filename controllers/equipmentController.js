@@ -1,9 +1,18 @@
 import Equipment from "../models/equipment.js";
 import asyncHandler from "../middleware/asyncHandler.js";
+import { paginate } from "../utils/paginate.js";
 
 export const getAllEquipment = asyncHandler(async (req, res) => {
-  const equipment = await Equipment.find();
-  res.status(200).json(equipment);
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await paginate(Equipment, page, limit);
+
+  res.status(200).json({
+    success: true,
+    message: "Equipment fetched successfully",
+    ...result,
+  });
 });
 
 export const getEquipmentById = asyncHandler(async (req, res) => {
