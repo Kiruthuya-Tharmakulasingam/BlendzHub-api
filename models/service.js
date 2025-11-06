@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const serviceSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  description: { type: String },
   price: { type: Number, required: true },
-  duration: { type: Number, required: true }, // in minutes
+  description: { type: String },
+  discount: { type: Number, default: 0 },
 });
 
 export default mongoose.model("Service", serviceSchema);
