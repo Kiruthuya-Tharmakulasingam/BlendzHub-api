@@ -1,6 +1,6 @@
 import express from "express";
 import {
-  getAllEquipment,
+  getAllEquipments,
   getEquipmentById,
   createEquipment,
   updateEquipment,
@@ -9,7 +9,7 @@ import {
 
 const router = express.Router();
 
-router.get("/", getAllEquipment);
+router.get("/", getAllEquipments);
 router.get("/:id", getEquipmentById);
 router.post("/", createEquipment);
 router.put("/:id", updateEquipment);
