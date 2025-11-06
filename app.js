@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
@@ -9,11 +10,12 @@ import feedbackRoutes from "./routes/feedbackRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import salonRoutes from "./routes/salonRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+
 import errorHandler from "./middleware/errorhandler.js";
 
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT;
 
@@ -33,10 +35,11 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/staffs", staffRoutes);
-app.use("/api/users", userRoutes);
+app.use("/api/salons", salonRoutes);
+app.use("/api/payments", paymentRoutes);
+
 app.use(errorHandler);
 
-// Start server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
