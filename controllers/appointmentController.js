@@ -8,7 +8,9 @@ export const getAllAppointments = asyncHandler(async (req, res) => {
   const total = await Appointment.countDocuments(filter);
 
   const appointments = await Appointment.find(filter)
-    .populate("customerId salonId serviceId")
+    .populate("customerId", "name email contact")
+    .populate("serviceId", "name price")
+    .populate("salonId", "name location")
     .skip((page - 1) * limit)
     .limit(Number(limit));
 
