@@ -6,8 +6,13 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "../controllers/customerController.js";
+import { protect, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// All routes require authentication and admin/owner role
+router.use(protect);
+router.use(authorize("owner", "admin"));
 
 router.get("/", getAllCustomers);
 router.get("/:id", getCustomerById);
