@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
+import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
@@ -28,6 +30,13 @@ app.get("/", (req, res) => {
   res.send("Welcome to Our App");
 });
 
+// Auth routes (public)
+app.use("/api/auth", authRoutes);
+
+// User management routes (admin only)
+app.use("/api/users", userRoutes);
+
+// Other routes
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/equipments", equipmentRoutes);
