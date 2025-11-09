@@ -1,5 +1,5 @@
 import Equipment from "../models/equipment.js";
-import asyncHandler from "../middleware/asyncHandler.js";
+import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllEquipments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, status } = req.query;
@@ -13,7 +13,7 @@ export const getAllEquipments = asyncHandler(async (req, res) => {
 
 export const getEquipmentById = asyncHandler(async (req, res) => {
   const equipment = await Equipment.findById(req.params.id);
-  if (!equipment) throw new Error("Equipment not found");
+  if (!equipment) throw new AppError("Equipment not found", 404);
   res.json({ success: true, data: equipment });
 });
 
@@ -26,12 +26,12 @@ export const updateEquipment = asyncHandler(async (req, res) => {
   const equipment = await Equipment.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
-  if (!equipment) throw new Error("Equipment not found");
+  if (!equipment) throw new AppError("Equipment not found", 404);
   res.json({ success: true, data: equipment });
 });
 
 export const deleteEquipment = asyncHandler(async (req, res) => {
   const equipment = await Equipment.findByIdAndDelete(req.params.id);
-  if (!equipment) throw new Error("Equipment not found");
+  if (!equipment) throw new AppError("Equipment not found", 404);
   res.json({ success: true, message: "Equipment deleted successfully" });
 });

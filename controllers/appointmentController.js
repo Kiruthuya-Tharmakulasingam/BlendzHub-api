@@ -1,5 +1,5 @@
 import Appointment from "../models/appointment.js";
-import asyncHandler from "../middleware/asyncHandler.js";
+import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 // GET all appointments (with pagination + filter)
 export const getAllAppointments = asyncHandler(async (req, res) => {
@@ -22,7 +22,7 @@ export const getAppointmentById = asyncHandler(async (req, res) => {
   const appointment = await Appointment.findById(req.params.id).populate(
     "customerId salonId serviceId"
   );
-  if (!appointment) throw new Error("Appointment not found");
+  if (!appointment) throw new AppError("Appointment not found", 404);
   res.json({ success: true, data: appointment });
 });
 
@@ -39,13 +39,13 @@ export const updateAppointment = asyncHandler(async (req, res) => {
     req.body,
     { new: true }
   );
-  if (!appointment) throw new Error("Appointment not found");
+  if (!appointment) throw new AppError("Appointment not found", 404);
   res.json({ success: true, data: appointment });
 });
 
 // DELETE appointment
 export const deleteAppointment = asyncHandler(async (req, res) => {
   const appointment = await Appointment.findByIdAndDelete(req.params.id);
-  if (!appointment) throw new Error("Appointment not found");
+  if (!appointment) throw new AppError("Appointment not found", 404);
   res.json({ success: true, message: "Appointment deleted successfully" });
 });

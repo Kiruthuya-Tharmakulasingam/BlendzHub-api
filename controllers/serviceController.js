@@ -1,5 +1,5 @@
 import Service from "../models/service.js";
-import asyncHandler from "../middleware/asyncHandler.js";
+import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllServices = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, name } = req.query;
@@ -13,7 +13,7 @@ export const getAllServices = asyncHandler(async (req, res) => {
 
 export const getServiceById = asyncHandler(async (req, res) => {
   const service = await Service.findById(req.params.id);
-  if (!service) throw new Error("Service not found");
+  if (!service) throw new AppError("Service not found", 404);
   res.json({ success: true, data: service });
 });
 
@@ -26,12 +26,12 @@ export const updateService = asyncHandler(async (req, res) => {
   const service = await Service.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
-  if (!service) throw new Error("Service not found");
+  if (!service) throw new AppError("Service not found", 404);
   res.json({ success: true, data: service });
 });
 
 export const deleteService = asyncHandler(async (req, res) => {
   const service = await Service.findByIdAndDelete(req.params.id);
-  if (!service) throw new Error("Service not found");
+  if (!service) throw new AppError("Service not found", 404);
   res.json({ success: true, message: "Service deleted successfully" });
 });

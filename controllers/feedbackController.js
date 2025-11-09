@@ -1,5 +1,5 @@
 import Feedback from "../models/feedback.js";
-import asyncHandler from "../middleware/asyncHandler.js";
+import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllFeedbacks = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, rating } = req.query;
@@ -14,7 +14,7 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
 
 export const getFeedbackById = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findById(req.params.id);
-  if (!feedback) throw new Error("Feedback not found");
+  if (!feedback) throw new AppError("Feedback not found", 404);
   res.json({ success: true, data: feedback });
 });
 
@@ -27,12 +27,12 @@ export const updateFeedback = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
-  if (!feedback) throw new Error("Feedback not found");
+  if (!feedback) throw new AppError("Feedback not found", 404);
   res.json({ success: true, data: feedback });
 });
 
 export const deleteFeedback = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findByIdAndDelete(req.params.id);
-  if (!feedback) throw new Error("Feedback not found");
+  if (!feedback) throw new AppError("Feedback not found", 404);
   res.json({ success: true, message: "Feedback deleted successfully" });
 });

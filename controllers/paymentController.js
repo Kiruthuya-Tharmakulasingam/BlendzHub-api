@@ -1,5 +1,5 @@
 import Payment from "../models/payment.js";
-import asyncHandler from "../middleware/asyncHandler.js";
+import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllPayments = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, method } = req.query;
@@ -13,7 +13,7 @@ export const getAllPayments = asyncHandler(async (req, res) => {
 
 export const getPaymentById = asyncHandler(async (req, res) => {
   const payment = await Payment.findById(req.params.id);
-  if (!payment) throw new Error("Payment not found");
+  if (!payment) throw new AppError("Payment not found", 404);
   res.json({ success: true, data: payment });
 });
 
@@ -26,12 +26,12 @@ export const updatePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
   });
-  if (!payment) throw new Error("Payment not found");
+  if (!payment) throw new AppError("Payment not found", 404);
   res.json({ success: true, data: payment });
 });
 
 export const deletePayment = asyncHandler(async (req, res) => {
   const payment = await Payment.findByIdAndDelete(req.params.id);
-  if (!payment) throw new Error("Payment not found");
+  if (!payment) throw new AppError("Payment not found", 404);
   res.json({ success: true, message: "Payment deleted successfully" });
 });
