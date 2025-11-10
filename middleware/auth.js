@@ -16,7 +16,22 @@ export const protect = asyncHandler(async (req, res, next) => {
 
   // Make sure token exists
   if (!token) {
-    return next(new AppError("Not authorized to access this route", 401));
+    return next(
+      new AppError(
+        "Not authorized to access this route. Please provide a valid token in the Authorization header (Bearer token).",
+        401
+      )
+    );
+  }
+
+  // Check if JWT_SECRET is set
+  if (!process.env.JWT_SECRET) {
+    return next(
+      new AppError(
+        "Server configuration error: JWT_SECRET is not set. Please check your environment variables.",
+        500
+      )
+    );
   }
 
   try {
@@ -27,10 +42,12 @@ export const protect = asyncHandler(async (req, res, next) => {
     req.user = await User.findById(decoded.id).select("-password");
 
     if (!req.user) {
-      return next(new AppError("User not found", 404));
+      return next(
+        new AppError("User not found. The token is valid but the user no longer exists.", 404)
+      );
     }
 
-    // Check if user is approved (unless they're already an admin accessing admin routes)
+    // Check if user is approved
     if (!req.user.isApproved) {
       return next(
         new AppError(
@@ -42,7 +59,18 @@ export const protect = asyncHandler(async (req, res, next) => {
 
     next();
   } catch (error) {
-    return next(new AppError("Not authorized to access this route", 401));
+    if (error.name === "JsonWebTokenError") {
+      return next(new AppError("Invalid token. Please login again.", 401));
+    }
+    if (error.name === "TokenExpiredError") {
+      return next(new AppError("Token has expired. Please login again.", 401));
+    }
+    return next(
+      new AppError(
+        `Not authorized to access this route. ${error.message || "Authentication failed."}`,
+        401
+      )
+    );
   }
 });
 
