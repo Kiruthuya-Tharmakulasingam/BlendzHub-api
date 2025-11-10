@@ -6,13 +6,14 @@ import {
   updatePayment,
   deletePayment,
 } from "../controllers/paymentController.js";
+import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAllPayments);
-router.get("/:id", getPaymentById);
-router.post("/", createPayment);
-router.put("/:id", updatePayment);
-router.delete("/:id", deletePayment);
+router.get("/", verifyToken, verifyRole(["owner", "admin", "staff"]), getAllPayments);
+router.get("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), getPaymentById);
+router.post("/", verifyToken, verifyRole(["owner", "admin"]), createPayment);
+router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updatePayment);
+router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deletePayment);
 
 export default router;

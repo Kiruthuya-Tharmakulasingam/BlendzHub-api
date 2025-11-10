@@ -6,18 +6,17 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "../controllers/customerController.js";
-import { protect, authorize } from "../middleware/auth.js";
+import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// All routes require authentication and admin/owner role
-router.use(protect);
-router.use(authorize("owner", "admin"));
+// Read: admin/owner/staff can view customers
+router.get("/", verifyToken, verifyRole(["owner", "admin", "staff"]), getAllCustomers);
+router.get("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), getCustomerById);
 
-router.get("/", getAllCustomers);
-router.get("/:id", getCustomerById);
-router.post("/", createCustomer);
-router.put("/:id", updateCustomer);
-router.delete("/:id", deleteCustomer);
+// Write: only admin/owner can create/update/delete customers
+router.post("/", verifyToken, verifyRole(["owner", "admin"]), createCustomer);
+router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateCustomer);
+router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteCustomer);
 
 export default router;

@@ -6,13 +6,14 @@ import {
   updateSalon,
   deleteSalon,
 } from "../controllers/salonController.js";
+import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAllSalons);
-router.get("/:id", getSalonById);
-router.post("/", createSalon);
-router.put("/:id", updateSalon);
-router.delete("/:id", deleteSalon);
+router.get("/", verifyToken, getAllSalons);
+router.get("/:id", verifyToken, getSalonById);
+router.post("/", verifyToken, verifyRole(["owner", "admin"]), createSalon);
+router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateSalon);
+router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteSalon);
 
 export default router;

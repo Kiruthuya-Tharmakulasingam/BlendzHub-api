@@ -1,6 +1,7 @@
 import User from "../models/user.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 import { generateToken } from "../utils/generateToken.js";
+import { blacklistToken } from "../middleware/auth.js";
 
 // @desc    Register a new user (requires admin approval to login)
 // @route   POST /api/auth/register
@@ -99,3 +100,19 @@ export const getMe = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Logout user (blacklist current token for this server run)
+// @route   POST /api/auth/logout
+// @access  Private
+export const logout = asyncHandler(async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const parts = authHeader.split(" ");
+  const token = parts.length === 2 && parts[0] === "Bearer" ? parts[1] : null;
+
+  if (!token) {
+    throw new AppError("No token provided for logout", 400);
+  }
+
+  blacklistToken(token);
+  res.status(200).json({ success: true, message: "Logged out. Token access denied." });
+});
+ 

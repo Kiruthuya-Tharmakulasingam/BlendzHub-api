@@ -6,13 +6,14 @@ import {
   updateEquipment,
   deleteEquipment,
 } from "../controllers/equipmentController.js";
+import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAllEquipments);
-router.get("/:id", getEquipmentById);
-router.post("/", createEquipment);
-router.put("/:id", updateEquipment);
-router.delete("/:id", deleteEquipment);
+router.get("/", verifyToken, getAllEquipments);
+router.get("/:id", verifyToken, getEquipmentById);
+router.post("/", verifyToken, verifyRole(["owner", "admin"]), createEquipment);
+router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateEquipment);
+router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteEquipment);
 
 export default router;

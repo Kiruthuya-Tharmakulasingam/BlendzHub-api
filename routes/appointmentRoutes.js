@@ -6,13 +6,17 @@ import {
   updateAppointment,
   deleteAppointment,
 } from "../controllers/appointmentController.js";
+import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", getAllAppointments);
-router.get("/:id", getAppointmentById);
-router.post("/", createAppointment);
-router.put("/:id", updateAppointment);
-router.delete("/:id", deleteAppointment);
+// Read: authenticated users
+router.get("/", verifyToken, getAllAppointments);
+router.get("/:id", verifyToken, getAppointmentById);
+
+// Write: admin/owner/staff can manage appointments
+router.post("/", verifyToken, verifyRole(["owner", "admin", "staff"]), createAppointment);
+router.put("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), updateAppointment);
+router.delete("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), deleteAppointment);
 
 export default router;

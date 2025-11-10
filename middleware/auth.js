@@ -2,6 +2,10 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import { AppError, asyncHandler } from "./errorhandler.js";
 
+// Simple in-memory blacklist for revoked tokens
+// For production, prefer a shared store like Redis with token IDs (jti)
+export const tokenBlacklist = new Set();
+
 // Protect routes - verify JWT token
 export const protect = asyncHandler(async (req, res, next) => {
   let token;
@@ -37,6 +41,11 @@ export const protect = asyncHandler(async (req, res, next) => {
   try {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Deny access if token is blacklisted (logged out)
+    if (tokenBlacklist.has(token)) {
+      return next(new AppError("Token access denied. Please login again.", 401));
+    }
 
     // Get user from token
     req.user = await User.findById(decoded.id).select("-password");
@@ -87,5 +96,17 @@ export const authorize = (...roles) => {
     }
     next();
   };
+};
+
+// Aliases matching requested naming
+export const verifyToken = protect;
+export const verifyRole = (allowedRoles) => {
+  const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+  return authorize(...rolesArray);
+};
+
+// Utility to blacklist a token (for logout)
+export const blacklistToken = (token) => {
+  if (token) tokenBlacklist.add(token);
 };
 
