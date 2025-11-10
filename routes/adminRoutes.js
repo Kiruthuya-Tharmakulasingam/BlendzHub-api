@@ -17,15 +17,16 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize("owner", "admin"));
 
-router.get("/", getAllUsers);
-router.get("/pending", getPendingUsers);
-router.get("/:id", getUserById);
+// User management routes
+router.get("/users", getAllUsers);
+router.get("/users/pending", getPendingUsers);
+router.get("/users/:id", getUserById);
 // Specific routes must come before general routes
-router.put("/:id/approve", approveUser);
-router.put("/:id/revoke", revokeUser);
-router.put("/:id/role", updateUserRole);
-router.put("/:id", updateUser); // General update endpoint
-router.delete("/:id", deleteUser);
+router.put("/users/:id/approve", approveUser);
+router.put("/users/:id/revoke", revokeUser);
+router.put("/users/:id/role", updateUserRole);
+router.put("/users/:id", updateUser); // General update endpoint
+router.delete("/users/:id", deleteUser);
 
 export default router;
 

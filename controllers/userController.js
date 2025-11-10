@@ -2,7 +2,7 @@ import User from "../models/user.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 // @desc    Get all users (admin only)
-// @route   GET /api/users
+// @route   GET /api/admin/users
 // @access  Private/Admin
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, role, isApproved } = req.query;
@@ -27,7 +27,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get pending users (awaiting approval) (admin only)
-// @route   GET /api/users/pending
+// @route   GET /api/admin/users/pending
 // @access  Private/Admin
 export const getPendingUsers = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
@@ -49,7 +49,7 @@ export const getPendingUsers = asyncHandler(async (req, res) => {
 });
 
 // @desc    Get single user by ID (admin only)
-// @route   GET /api/users/:id
+// @route   GET /api/admin/users/:id
 // @access  Private/Admin
 export const getUserById = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id)
@@ -67,7 +67,7 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 // @desc    Approve user login access (admin only)
-// @route   PUT /api/users/:id/approve
+// @route   PUT /api/admin/users/:id/approve
 // @access  Private/Admin
 export const approveUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -101,7 +101,7 @@ export const approveUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Revoke user login access (admin only)
-// @route   PUT /api/users/:id/revoke
+// @route   PUT /api/admin/users/:id/revoke
 // @access  Private/Admin
 export const revokeUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -138,7 +138,7 @@ export const revokeUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Update user role (admin only)
-// @route   PUT /api/users/:id/role
+// @route   PUT /api/admin/users/:id/role
 // @access  Private/Admin
 export const updateUserRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
@@ -178,7 +178,7 @@ export const updateUserRole = asyncHandler(async (req, res) => {
 });
 
 // @desc    Update user (admin only) - can update any user field
-// @route   PUT /api/users/:id
+// @route   PUT /api/admin/users/:id
 // @access  Private/Admin
 export const updateUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -235,7 +235,7 @@ export const updateUser = asyncHandler(async (req, res) => {
 });
 
 // @desc    Delete user (admin only)
-// @route   DELETE /api/users/:id
+// @route   DELETE /api/admin/users/:id
 // @access  Private/Admin
 export const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);

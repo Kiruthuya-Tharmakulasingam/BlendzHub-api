@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
@@ -33,8 +33,8 @@ app.get("/", (req, res) => {
 // Auth routes (public)
 app.use("/api/auth", authRoutes);
 
-// User management routes (admin only)
-app.use("/api/users", userRoutes);
+// Admin routes (admin/owner only)
+app.use("/api/admin", adminRoutes);
 
 // Other routes
 app.use("/api/customers", customerRoutes);

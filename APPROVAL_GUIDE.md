@@ -48,7 +48,7 @@ This will create an admin user with:
 
 ### Step 3: Get Pending Users
 
-**Endpoint:** `GET /api/users/pending`
+**Endpoint:** `GET /api/admin/users/pending`
 
 **Headers:**
 ```
@@ -76,9 +76,9 @@ Authorization: Bearer <your-admin-token>
 
 ### Step 4: Approve the User
 
-**Endpoint:** `PUT /api/users/:id/approve`
+**Endpoint:** `PUT /api/admin/users/:id/approve`
 
-**Example:** `PUT /api/users/69101ea98bd56d3df0e16b02/approve`
+**Example:** `PUT /api/admin/users/69101ea98bd56d3df0e16b02/approve`
 
 **Headers:**
 ```
@@ -129,13 +129,13 @@ curl -X POST http://localhost:5000/api/auth/login \
 
 2. **Get Pending Users:**
 ```bash
-curl -X GET http://localhost:5000/api/users/pending \
+curl -X GET http://localhost:5000/api/admin/users/pending \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
 3. **Approve User:**
 ```bash
-curl -X PUT http://localhost:5000/api/users/69101ea98bd56d3df0e16b02/approve \
+curl -X PUT http://localhost:5000/api/admin/users/69101ea98bd56d3df0e16b02/approve \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
 ```
 
@@ -155,13 +155,13 @@ curl -X PUT http://localhost:5000/api/users/69101ea98bd56d3df0e16b02/approve \
 
 2. **Get Pending Users:**
    - Method: `GET`
-   - URL: `http://localhost:5000/api/users/pending`
+   - URL: `http://localhost:5000/api/admin/users/pending`
    - Headers:
      - `Authorization: Bearer <paste-token-here>`
 
 3. **Approve User:**
    - Method: `PUT`
-   - URL: `http://localhost:5000/api/users/69101ea98bd56d3df0e16b02/approve`
+   - URL: `http://localhost:5000/api/admin/users/69101ea98bd56d3df0e16b02/approve`
    - Headers:
      - `Authorization: Bearer <paste-token-here>`
 
@@ -177,9 +177,12 @@ curl -X PUT http://localhost:5000/api/users/69101ea98bd56d3df0e16b02/approve \
 
 All require admin/owner authentication:
 
-- `GET /api/users` - Get all users (with filters)
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id/revoke` - Revoke user access
-- `PUT /api/users/:id/role` - Update user role
-- `DELETE /api/users/:id` - Delete user
+- `GET /api/admin/users` - Get all users (with filters)
+- `GET /api/admin/users/pending` - Get pending users
+- `GET /api/admin/users/:id` - Get user by ID
+- `PUT /api/admin/users/:id/approve` - Approve user access
+- `PUT /api/admin/users/:id/revoke` - Revoke user access
+- `PUT /api/admin/users/:id/role` - Update user role
+- `PUT /api/admin/users/:id` - Update user (general)
+- `DELETE /api/admin/users/:id` - Delete user
 
