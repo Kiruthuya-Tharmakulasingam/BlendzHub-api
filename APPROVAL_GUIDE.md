@@ -1,188 +1,149 @@
-# User Approval Guide
+# API Quick Guide: Auth, Roles, and Routes
 
-## How to Approve a User
+This guide shows how to authenticate, which roles can access what, and concise examples for using each route.
 
-### Step 1: Create an Admin User (First Time Only)
+Base URL: `http://localhost:5000`
 
-If you don't have an admin user yet, create one using the script:
+## Roles
+- owner (full access)
+- admin (manage users and content)
+- staff
+- user
+- customer
 
+## Auth
+- Register (Public): `POST /api/auth/register`
+- Login (Public): `POST /api/auth/login`
+- Me (Private): `GET /api/auth/me`
+- Logout (Private): `POST /api/auth/logout` (blacklists current token)
+
+Example (login → use token):
 ```bash
-npm run create-admin
+# Login
+TOKEN=$(curl -s -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@blendzhub.com","password":"Admin@123"}' | jq -r .token)
+
+# Use token
+curl -X GET http://localhost:5000/api/auth/me -H "Authorization: Bearer $TOKEN"
 ```
 
-This will create an admin user with:
-- Email: `admin@blendzhub.com` (or from `ADMIN_EMAIL` env variable)
-- Password: `Admin@123` (or from `ADMIN_PASSWORD` env variable)
-- Role: `admin`
-- Status: Already approved
+Authorization header for all protected routes:
+```
+Authorization: Bearer <JWT_TOKEN>
+```
 
-### Step 2: Login as Admin
+---
 
-**Endpoint:** `POST /api/auth/login`
+## Admin (User Management)
+All under `/api/admin/users/*` and require `owner` or `admin`.
 
-**Request:**
+- List users: `GET /api/admin/users`
+- Pending users: `GET /api/admin/users/pending`
+- Get user: `GET /api/admin/users/:id`
+- Approve user: `PUT /api/admin/users/:id/approve`
+- Revoke user: `PUT /api/admin/users/:id/revoke`
+- Update role: `PUT /api/admin/users/:id/role` (body: `{ "role": "admin" }`)
+- Update user: `PUT /api/admin/users/:id`
+- Delete user: `DELETE /api/admin/users/:id`
+
+Minimal example (approve):
+```bash
+curl -X PUT http://localhost:5000/api/admin/users/<USER_ID>/approve \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## Entities: Permissions and Endpoints
+All require `verifyToken`. Additional `verifyRole([...])` is applied as noted.
+
+Legend: R = Read (GET list/by id), W = Write (POST/PUT/DELETE)
+
+### Customers `/api/customers`
+- R: owner, admin, staff
+- W: owner, admin
+Examples:
+```bash
+curl -X GET http://localhost:5000/api/customers -H "Authorization: Bearer $TOKEN"
+curl -X POST http://localhost:5000/api/customers \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Alice","email":"alice@example.com","contact":1234567890}'
+```
+
+### Products `/api/products`
+- R: any authenticated
+- W: owner, admin
+```bash
+curl -X GET http://localhost:5000/api/products -H "Authorization: Bearer $TOKEN"
+```
+
+### Salons `/api/salons`
+- R: any authenticated
+- W: owner, admin
+```bash
+curl -X POST http://localhost:5000/api/salons \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"HQ","location":"City"}'
+```
+
+### Equipment `/api/equipments`
+- R: any authenticated
+- W: owner, admin
+```bash
+curl -X GET http://localhost:5000/api/equipments -H "Authorization: Bearer $TOKEN"
+```
+
+### Feedback `/api/feedbacks`
+- R: any authenticated
+- Create: owner, admin, staff, user, customer
+- Update: owner, admin, staff
+- Delete: owner, admin
+```bash
+curl -X POST http://localhost:5000/api/feedbacks \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"message":"Great!","rating":5}'
+```
+
+### Payments `/api/payments`
+- R: owner, admin, staff
+- W: owner, admin
+```bash
+curl -X GET http://localhost:5000/api/payments -H "Authorization: Bearer $TOKEN"
+```
+
+### Appointments `/api/appointments`
+- R: any authenticated
+- W (manage): owner, admin, staff
+```bash
+curl -X POST http://localhost:5000/api/appointments \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"date":"2025-01-01","status":"scheduled"}'
+```
+
+### Services `/api/services`
+- R: any authenticated
+- W: owner, admin
+```bash
+curl -X GET http://localhost:5000/api/services -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## Validation Errors (Field-Specific)
+Example response:
 ```json
 {
-  "email": "admin@blendzhub.com",
-  "password": "Admin@123"
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Login successful",
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "data": {
-    "id": "...",
-    "name": "System Admin",
-    "email": "admin@blendzhub.com",
-    "role": "admin",
-    "isApproved": true
-  }
-}
-```
-
-**Save the `token` from the response!**
-
-### Step 3: Get Pending Users
-
-**Endpoint:** `GET /api/admin/users/pending`
-
-**Headers:**
-```
-Authorization: Bearer <your-admin-token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "total": 1,
-  "message": "1 user(s) pending approval",
-  "data": [
-    {
-      "_id": "69101ea98bd56d3df0e16b02",
-      "name": "Kiruthuya",
-      "email": "kiru@gmail.com",
-      "role": "owner",
-      "isApproved": false,
-      "createdAt": "2024-01-01T00:00:00.000Z"
-    }
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    { "field": "name", "message": "name is required" }
   ]
 }
 ```
 
-### Step 4: Approve the User
-
-**Endpoint:** `PUT /api/admin/users/:id/approve`
-
-**Example:** `PUT /api/admin/users/69101ea98bd56d3df0e16b02/approve`
-
-**Headers:**
-```
-Authorization: Bearer <your-admin-token>
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "message": "User approved successfully",
-  "data": {
-    "id": "69101ea98bd56d3df0e16b02",
-    "name": "Kiruthuya",
-    "email": "kiru@gmail.com",
-    "role": "owner",
-    "isApproved": true,
-    "approvedBy": "...",
-    "approvedAt": "2024-01-01T00:00:00.000Z"
-  }
-}
-```
-
-### Step 5: User Can Now Login
-
-After approval, the user can login using:
-
-**Endpoint:** `POST /api/auth/login`
-
-**Request:**
-```json
-{
-  "email": "kiru@gmail.com",
-  "password": "kiru@1025"
-}
-```
-
-## Complete API Examples
-
-### Using cURL
-
-1. **Login as Admin:**
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@blendzhub.com","password":"Admin@123"}'
-```
-
-2. **Get Pending Users:**
-```bash
-curl -X GET http://localhost:5000/api/admin/users/pending \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-3. **Approve User:**
-```bash
-curl -X PUT http://localhost:5000/api/admin/users/69101ea98bd56d3df0e16b02/approve \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
-```
-
-### Using Postman/Thunder Client
-
-1. **Login as Admin:**
-   - Method: `POST`
-   - URL: `http://localhost:5000/api/auth/login`
-   - Body (JSON):
-     ```json
-     {
-       "email": "admin@blendzhub.com",
-       "password": "Admin@123"
-     }
-     ```
-   - Copy the `token` from response
-
-2. **Get Pending Users:**
-   - Method: `GET`
-   - URL: `http://localhost:5000/api/admin/users/pending`
-   - Headers:
-     - `Authorization: Bearer <paste-token-here>`
-
-3. **Approve User:**
-   - Method: `PUT`
-   - URL: `http://localhost:5000/api/admin/users/69101ea98bd56d3df0e16b02/approve`
-   - Headers:
-     - `Authorization: Bearer <paste-token-here>`
-
-## Available Roles
-
-- **owner**: Highest level, has admin permissions
-- **admin**: Can manage users and access admin routes
-- **staff**: Regular staff member
-- **user**: Regular user
-- **customer**: Customer role
-
-## Other User Management Endpoints
-
-All require admin/owner authentication:
-
-- `GET /api/admin/users` - Get all users (with filters)
-- `GET /api/admin/users/pending` - Get pending users
-- `GET /api/admin/users/:id` - Get user by ID
-- `PUT /api/admin/users/:id/approve` - Approve user access
-- `PUT /api/admin/users/:id/revoke` - Revoke user access
-- `PUT /api/admin/users/:id/role` - Update user role
-- `PUT /api/admin/users/:id` - Update user (general)
-- `DELETE /api/admin/users/:id` - Delete user
+## Notes
+- Logout blacklists the in-use token; further usage returns "Token access denied."
+- Ensure accounts are approved by admin/owner before login succeeds.
+- Use role-specific endpoints under `/api/admin/users/*` for user management. 
 
