@@ -41,13 +41,16 @@ const createAdmin = async () => {
     const adminExists = await User.findOne({ role: "admin", isApproved: true });
 
     if (adminExists) {
-      console.log("\n⚠️  An admin user already exists!");
+      console.log("\n  An admin user already exists!");
       const overwrite = await askQuestion(
         rl,
         "Do you want to create another admin? (yes/no): "
       );
 
-      if (overwrite.toLowerCase() !== "yes" && overwrite.toLowerCase() !== "y") {
+      if (
+        overwrite.toLowerCase() !== "yes" &&
+        overwrite.toLowerCase() !== "y"
+      ) {
         console.log("Operation cancelled.");
         rl.close();
         process.exit(0);
@@ -59,14 +62,14 @@ const createAdmin = async () => {
 
     const adminName = await askQuestion(rl, "Admin Name: ");
     if (!adminName) {
-      console.log("❌ Name is required!");
+      console.log("Name is required!");
       rl.close();
       process.exit(1);
     }
 
     const adminEmail = await askQuestion(rl, "Admin Email: ");
     if (!adminEmail) {
-      console.log("❌ Email is required!");
+      console.log("Email is required!");
       rl.close();
       process.exit(1);
     }
@@ -74,32 +77,34 @@ const createAdmin = async () => {
     // Validate email format
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!emailRegex.test(adminEmail)) {
-      console.log("❌ Invalid email format!");
+      console.log("Invalid email format!");
       rl.close();
       process.exit(1);
     }
 
-    const adminPassword = await askPassword(rl, "Admin Password (min 6 characters): ");
+    const adminPassword = await askPassword(
+      rl,
+      "Admin Password (min 6 characters): "
+    );
     if (!adminPassword || adminPassword.length < 6) {
-      console.log("❌ Password must be at least 6 characters!");
+      console.log("Password must be at least 6 characters!");
       rl.close();
       process.exit(1);
     }
 
     const confirmPassword = await askPassword(rl, "Confirm Password: ");
     if (adminPassword !== confirmPassword) {
-      console.log("❌ Passwords do not match!");
+      console.log("Passwords do not match!");
       rl.close();
       process.exit(1);
     }
 
-    const adminRole = await askQuestion(
-      rl,
-      "Admin Role (owner/admin) [default: admin]: "
-    ) || "admin";
+    const adminRole =
+      (await askQuestion(rl, "Admin Role (owner/admin) [default: admin]: ")) ||
+      "admin";
 
     if (!["owner", "admin"].includes(adminRole.toLowerCase())) {
-      console.log("❌ Role must be 'owner' or 'admin'!");
+      console.log("Role must be 'owner' or 'admin'!");
       rl.close();
       process.exit(1);
     }
@@ -107,7 +112,9 @@ const createAdmin = async () => {
     rl.close();
 
     // Check if user with this email exists
-    const existingUser = await User.findOne({ email: adminEmail.toLowerCase() });
+    const existingUser = await User.findOne({
+      email: adminEmail.toLowerCase(),
+    });
 
     if (existingUser) {
       // Update existing user to admin
@@ -118,7 +125,7 @@ const createAdmin = async () => {
       existingUser.approvedAt = new Date();
       existingUser.password = adminPassword; // Password will be hashed by pre-save hook
       await existingUser.save();
-      console.log("\n✅ Existing user updated to admin!");
+      console.log("\n Existing user updated to admin!");
       console.log(`   Name: ${adminName}`);
       console.log(`   Email: ${adminEmail}`);
       console.log(`   Role: ${adminRole.toLowerCase()}`);
@@ -134,18 +141,18 @@ const createAdmin = async () => {
         approvedAt: new Date(),
       });
 
-      console.log("\n✅ Admin user created successfully!");
+      console.log("\n Admin user created successfully!");
       console.log(`   Name: ${admin.name}`);
       console.log(`   Email: ${admin.email}`);
       console.log(`   Role: ${admin.role}`);
       console.log(`   Status: Approved`);
     }
 
-    console.log("\n🎉 Setup complete!\n");
+    console.log("\n Setup complete!\n");
     process.exit(0);
   } catch (error) {
     rl.close();
-    console.error("\n❌ Error creating admin:", error.message);
+    console.error("\n Error creating admin:", error.message);
     process.exit(1);
   }
 };
@@ -154,4 +161,3 @@ const createAdmin = async () => {
 createAdmin();
 
 export default createAdmin;
-
