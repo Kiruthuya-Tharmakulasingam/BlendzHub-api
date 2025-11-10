@@ -37,18 +37,32 @@ const errorHandler = (err, req, res, next) => {
 
   // Mongoose validation error
   if (err.name === "ValidationError") {
-    const message = Object.values(err.errors).map((val) => val.message).join(", ");
-    error = new AppError(message, 400);
+    const fieldErrors = Object.keys(err.errors).map((field) => ({
+      field,
+      message: err.errors[field].message,
+    }));
+    // Attach detailed field errors to the error object
+    error = new AppError("Validation failed", 400);
+    error.fieldErrors = fieldErrors;
   }
 
   const statusCode = error.statusCode || err.statusCode || 500;
   const message = error.message || "Server Error";
 
-  res.status(statusCode).json({
+  const response = {
     success: false,
     message,
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
-  });
+  };
+
+  if (error.fieldErrors) {
+    response.errors = error.fieldErrors;
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    response.stack = err.stack;
+  }
+
+  res.status(statusCode).json(response);
 };
 
 export default errorHandler;
