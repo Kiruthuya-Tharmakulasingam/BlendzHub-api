@@ -10,8 +10,11 @@ import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", verifyToken, getAllSalons);
-router.get("/:id", verifyToken, getSalonById);
+// Public routes - anyone can view salons
+router.get("/", getAllSalons);
+router.get("/:id", getSalonById);
+
+// Protected routes - only admin/owner can create/update/delete salons
 router.post("/", verifyToken, verifyRole(["owner", "admin"]), createSalon);
 router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateSalon);
 router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteSalon);

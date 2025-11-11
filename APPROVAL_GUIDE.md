@@ -56,16 +56,20 @@ curl -X PUT http://localhost:5000/api/admin/users/<USER_ID>/approve \
 ---
 
 ## Entities: Permissions and Endpoints
-All require `verifyToken`. Additional `verifyRole([...])` is applied as noted.
+Most routes require `verifyToken` for authentication. Public routes (customers, salons GET) don't require authentication. Additional `verifyRole([...])` is applied for write operations as noted.
 
 Legend: R = Read (GET list/by id), W = Write (POST/PUT/DELETE)
 
 ### Customers `/api/customers`
-- R: owner, admin, staff
-- W: owner, admin
+- R: **Public** (no authentication required)
+- W: owner, admin (authentication required)
 Examples:
 ```bash
-curl -X GET http://localhost:5000/api/customers -H "Authorization: Bearer $TOKEN"
+# Public - no token needed
+curl -X GET http://localhost:5000/api/customers
+curl -X GET http://localhost:5000/api/customers/<ID>
+
+# Protected - requires admin/owner token
 curl -X POST http://localhost:5000/api/customers \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"Alice","email":"alice@example.com","contact":1234567890}'
@@ -79,9 +83,14 @@ curl -X GET http://localhost:5000/api/products -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Salons `/api/salons`
-- R: any authenticated
-- W: owner, admin
+- R: **Public** (no authentication required)
+- W: owner, admin (authentication required)
 ```bash
+# Public - no token needed
+curl -X GET http://localhost:5000/api/salons
+curl -X GET http://localhost:5000/api/salons/<ID>
+
+# Protected - requires admin/owner token
 curl -X POST http://localhost:5000/api/salons \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"name":"HQ","location":"City"}'
