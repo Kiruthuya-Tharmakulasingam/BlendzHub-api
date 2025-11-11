@@ -56,18 +56,18 @@ curl -X PUT http://localhost:5000/api/admin/users/<USER_ID>/approve \
 ---
 
 ## Entities: Permissions and Endpoints
-Most routes require `verifyToken` for authentication. Public routes (customers, salons GET) don't require authentication. Additional `verifyRole([...])` is applied for write operations as noted.
+Most routes require `verifyToken` for authentication. Public routes (salons, products, equipment, services GET) don't require authentication. Customers are protected. Additional `verifyRole([...])` is applied for write operations as noted.
 
 Legend: R = Read (GET list/by id), W = Write (POST/PUT/DELETE)
 
 ### Customers `/api/customers`
-- R: **Public** (no authentication required)
+- R: owner, admin, staff (authentication required)
 - W: owner, admin (authentication required)
 Examples:
 ```bash
-# Public - no token needed
-curl -X GET http://localhost:5000/api/customers
-curl -X GET http://localhost:5000/api/customers/<ID>
+# Protected - requires admin/owner/staff token
+curl -X GET http://localhost:5000/api/customers -H "Authorization: Bearer $TOKEN"
+curl -X GET http://localhost:5000/api/customers/<ID> -H "Authorization: Bearer $TOKEN"
 
 # Protected - requires admin/owner token
 curl -X POST http://localhost:5000/api/customers \
@@ -76,10 +76,17 @@ curl -X POST http://localhost:5000/api/customers \
 ```
 
 ### Products `/api/products`
-- R: any authenticated
-- W: owner, admin
+- R: **Public** (no authentication required)
+- W: owner, admin (authentication required)
 ```bash
-curl -X GET http://localhost:5000/api/products -H "Authorization: Bearer $TOKEN"
+# Public - no token needed
+curl -X GET http://localhost:5000/api/products
+curl -X GET http://localhost:5000/api/products/<ID>
+
+# Protected - requires admin/owner token
+curl -X POST http://localhost:5000/api/products \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Shampoo"}'
 ```
 
 ### Salons `/api/salons`
@@ -97,10 +104,17 @@ curl -X POST http://localhost:5000/api/salons \
 ```
 
 ### Equipment `/api/equipments`
-- R: any authenticated
-- W: owner, admin
+- R: **Public** (no authentication required)
+- W: owner, admin (authentication required)
 ```bash
-curl -X GET http://localhost:5000/api/equipments -H "Authorization: Bearer $TOKEN"
+# Public - no token needed
+curl -X GET http://localhost:5000/api/equipments
+curl -X GET http://localhost:5000/api/equipments/<ID>
+
+# Protected - requires admin/owner token
+curl -X POST http://localhost:5000/api/equipments \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Chair","status":"ok"}'
 ```
 
 ### Feedback `/api/feedbacks`
@@ -131,10 +145,17 @@ curl -X POST http://localhost:5000/api/appointments \
 ```
 
 ### Services `/api/services`
-- R: any authenticated
-- W: owner, admin
+- R: **Public** (no authentication required)
+- W: owner, admin (authentication required)
 ```bash
-curl -X GET http://localhost:5000/api/services -H "Authorization: Bearer $TOKEN"
+# Public - no token needed
+curl -X GET http://localhost:5000/api/services
+curl -X GET http://localhost:5000/api/services/<ID>
+
+# Protected - requires admin/owner token
+curl -X POST http://localhost:5000/api/services \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Haircut"}'
 ```
 
 ---

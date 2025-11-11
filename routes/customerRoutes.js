@@ -10,9 +10,9 @@ import { verifyToken, verifyRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes - anyone can view customers and salons
-router.get("/", getAllCustomers);
-router.get("/:id", getCustomerById);
+// Protected routes - only admin/owner/staff can view customers
+router.get("/", verifyToken, verifyRole(["owner", "admin", "staff"]), getAllCustomers);
+router.get("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), getCustomerById);
 
 // Protected routes - only admin/owner can create/update/delete customers
 router.post("/", verifyToken, verifyRole(["owner", "admin"]), createCustomer);
