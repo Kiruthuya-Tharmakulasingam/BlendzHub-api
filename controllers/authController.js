@@ -72,7 +72,18 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   // Generate token
-  const token = generateToken(user._id);
+  let token;
+  try {
+    token = generateToken(user._id);
+  } catch (error) {
+    if (error.code === "JWT_SECRET_MISSING" || error.code === "JWT_SECRET_INVALID") {
+      throw new AppError(
+        "Server configuration error: JWT_SECRET is not set in Vercel. Please add it in Vercel Dashboard → Settings → Environment Variables and redeploy.",
+        500
+      );
+    }
+    throw error;
+  }
 
   res.status(200).json({
     success: true,

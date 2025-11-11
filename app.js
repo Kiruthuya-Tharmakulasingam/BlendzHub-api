@@ -27,7 +27,31 @@ app.use(express.json());
 connectDB();
 
 app.get("/", (req, res) => {
-  res.send("Welcome to Our App");
+  res.json({
+    message: "Welcome to Our App",
+    debug: {
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+      hasMongoUri: !!process.env.MONGO_URI,
+      nodeEnv: process.env.NODE_ENV,
+      message: process.env.JWT_SECRET 
+        ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")" 
+        : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables"
+    }
+  });
+});
+
+// Debug endpoint to check environment variables
+app.get("/api/debug/env", (req, res) => {
+  res.json({
+    hasJwtSecret: !!process.env.JWT_SECRET,
+    jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+    hasMongoUri: !!process.env.MONGO_URI,
+    nodeEnv: process.env.NODE_ENV,
+    message: process.env.JWT_SECRET 
+      ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")" 
+      : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables"
+  });
 });
 
 // Auth routes (public)
