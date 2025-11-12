@@ -1,5 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import Staff from "../models/staff.js";
+import Salon from "../models/salon.js";
 import { AppError, asyncHandler } from "./errorhandler.js";
 
 // Simple in-memory blacklist for revoked tokens
@@ -56,7 +58,7 @@ export const protect = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Check if user is approved
+    // Check if user is approved by admin (for customers and owners)
     if (!req.user.isApproved) {
       return next(
         new AppError(
@@ -64,6 +66,29 @@ export const protect = asyncHandler(async (req, res, next) => {
           403
         )
       );
+    }
+
+    // For staff: also check if approved by owner
+    if (req.user.role === "staff") {
+      const staff = await Staff.findOne({ userId: req.user._id });
+      if (!staff || !staff.isApprovedByOwner) {
+        return next(
+          new AppError(
+            "Your staff account is pending owner approval. Please wait for the salon owner to approve your registration.",
+            403
+          )
+        );
+      }
+      // Attach staff info to request
+      req.staff = staff;
+    }
+
+    // For owners: attach salon info
+    if (req.user.role === "owner") {
+      const salon = await Salon.findOne({ ownerId: req.user._id });
+      if (salon) {
+        req.salon = salon;
+      }
     }
 
     next();
@@ -109,4 +134,46 @@ export const verifyRole = (allowedRoles) => {
 export const blacklistToken = (token) => {
   if (token) tokenBlacklist.add(token);
 };
+
+// Owner authorization - can only manage their own salon
+export const verifyOwner = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== "owner") {
+    return next(new AppError("Only salon owners can access this route", 403));
+  }
+
+  const salon = await Salon.findOne({ ownerId: req.user._id });
+  if (!salon) {
+    return next(new AppError("You don't have a salon associated with your account", 404));
+  }
+
+  req.salon = salon;
+  next();
+});
+
+// Staff authorization - can only manage their own data
+export const verifyStaff = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== "staff") {
+    return next(new AppError("Only staff members can access this route", 403));
+  }
+
+  const staff = await Staff.findOne({ userId: req.user._id });
+  if (!staff) {
+    return next(new AppError("Staff profile not found", 404));
+  }
+
+  if (!staff.isApprovedByOwner) {
+    return next(new AppError("Your staff account is pending owner approval", 403));
+  }
+
+  req.staff = staff;
+  next();
+});
+
+// Customer authorization - can only manage their own data
+export const verifyCustomer = asyncHandler(async (req, res, next) => {
+  if (req.user.role !== "customer") {
+    return next(new AppError("Only customers can access this route", 403));
+  }
+  next();
+});
 
