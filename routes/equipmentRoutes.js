@@ -14,9 +14,9 @@ const router = express.Router();
 router.get("/", getAllEquipments);
 router.get("/:id", getEquipmentById);
 
-// Protected routes - only admin/owner can create/update/delete equipment
-router.post("/", verifyToken, verifyRole(["owner", "admin"]), createEquipment);
-router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateEquipment);
-router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteEquipment);
+// Protected routes - only owner can create/update/delete equipment
+router.post("/", verifyToken, verifyRole(["owner"]), createEquipment);
+router.put("/:id", verifyToken, verifyRole(["owner"]), updateEquipment);
+router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteEquipment);
 
 export default router;

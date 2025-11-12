@@ -1,22 +1,36 @@
 import express from "express";
 import {
-  getAllStaff,
-  getStaffById,
-  createStaff,
-  updateStaff,
-  deleteStaff,
+  getMyAppointments,
+  acceptAppointment,
+  startAppointment,
+  completeAppointment,
+  getMyProducts,
+  getMyEquipment,
+  updateMyProduct,
+  updateMyEquipment,
+  getMyFeedback,
 } from "../controllers/staffController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { verifyToken, verifyStaff } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Read: authenticated staff/admin/owner
-router.get("/", verifyToken, verifyRole(["owner", "admin", "staff"]), getAllStaff);
-router.get("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), getStaffById);
+// All routes require staff authentication
+router.use(verifyToken);
+router.use(verifyStaff);
 
-// Write: admin/owner only
-router.post("/", verifyToken, verifyRole(["owner", "admin"]), createStaff);
-router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateStaff);
-router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteStaff);
+// Appointment management
+router.get("/appointments", getMyAppointments);
+router.put("/appointments/:id/accept", acceptAppointment);
+router.put("/appointments/:id/start", startAppointment);
+router.put("/appointments/:id/complete", completeAppointment);
+
+// Product & Equipment management
+router.get("/products", getMyProducts);
+router.get("/equipment", getMyEquipment);
+router.put("/products/:id", updateMyProduct);
+router.put("/equipment/:id", updateMyEquipment);
+
+// Feedback
+router.get("/feedback", getMyFeedback);
 
 export default router;

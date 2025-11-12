@@ -14,9 +14,9 @@ const router = express.Router();
 router.get("/", getAllSalons);
 router.get("/:id", getSalonById);
 
-// Protected routes - only admin/owner can create/update/delete salons
-router.post("/", verifyToken, verifyRole(["owner", "admin"]), createSalon);
-router.put("/:id", verifyToken, verifyRole(["owner", "admin"]), updateSalon);
-router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteSalon);
+// Protected routes - only owner can create/update/delete salons
+router.post("/", verifyToken, verifyRole(["owner"]), createSalon);
+router.put("/:id", verifyToken, verifyRole(["owner"]), updateSalon);
+router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteSalon);
 
 export default router;

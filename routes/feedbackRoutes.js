@@ -14,13 +14,13 @@ const router = express.Router();
 router.get("/", verifyToken, getAllFeedbacks);
 router.get("/:id", verifyToken, getFeedbackById);
 
-// Create: authenticated customers/users can post feedback
-router.post("/", verifyToken, verifyRole(["owner", "admin", "staff", "user", "customer"]), createFeedback);
+// Create: customers can post feedback
+router.post("/", verifyToken, verifyRole(["customer"]), createFeedback);
 
-// Update: owner/admin/staff can moderate
-router.put("/:id", verifyToken, verifyRole(["owner", "admin", "staff"]), updateFeedback);
+// Update: staff can moderate
+router.put("/:id", verifyToken, verifyRole(["staff"]), updateFeedback);
 
-// Delete: admin/owner can remove inappropriate content
-router.delete("/:id", verifyToken, verifyRole(["owner", "admin"]), deleteFeedback);
+// Delete: admin can remove inappropriate content
+router.delete("/:id", verifyToken, verifyRole(["staff"]), deleteFeedback);
 
 export default router;
