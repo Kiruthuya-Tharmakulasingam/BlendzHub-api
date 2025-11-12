@@ -5,13 +5,17 @@ import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
+import ownerRoutes from "./routes/ownerRoutes.js";
+import staffRoutes from "./routes/staffRoutes.js";
+import staffSpecializationRoutes from "./routes/staffSpecializationRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
-import staffRoutes from "./routes/staffRoutes.js";
 import salonRoutes from "./routes/salonRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 
@@ -57,17 +61,31 @@ app.get("/api/debug/env", (req, res) => {
 // Auth routes (public)
 app.use("/api/auth", authRoutes);
 
+// Profile routes (authenticated users)
+app.use("/api/profile", profileRoutes);
+
 // Admin routes (admin/owner only)
 app.use("/api/admin", adminRoutes);
 
-// Other routes
+// Owner routes (owner only)
+app.use("/api/owner", ownerRoutes);
+
+// Staff routes (staff only)
+app.use("/api/staff", staffRoutes);
+
+// Staff specializations (public)
+app.use("/api/staff-specializations", staffSpecializationRoutes);
+
+// Notification routes (authenticated users)
+app.use("/api/notifications", notificationRoutes);
+
+// Entity routes
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
 app.use("/api/equipments", equipmentRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
-app.use("/api/staffs", staffRoutes);
 app.use("/api/salons", salonRoutes);
 app.use("/api/payments", paymentRoutes);
 
