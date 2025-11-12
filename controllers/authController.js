@@ -7,7 +7,7 @@ import { blacklistToken } from "../middleware/auth.js";
 // @route   POST /api/auth/register
 // @access  Public
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, salonId } = req.body;
 
   // Check if user exists
   const userExists = await User.findOne({ email });
@@ -16,26 +16,84 @@ export const register = asyncHandler(async (req, res) => {
     throw new AppError("User already exists", 400);
   }
 
-  // Create user (not approved by default)
-  const user = await User.create({
-    name,
-    email,
-    password,
-    role: role || "user",
-    isApproved: false,
-  });
+  const userRole = role || "user";
 
-  res.status(201).json({
-    success: true,
-    message: "Registration successful. Please wait for admin approval to login.",
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isApproved: user.isApproved,
-    },
-  });
+  // For staff registration, salonId is required
+  if (userRole === "staff") {
+    if (!salonId) {
+      throw new AppError("Staff registration requires salonId", 400);
+    }
+
+    // Verify salon exists
+    const Salon = (await import("../models/salon.js")).default;
+    const salon = await Salon.findById(salonId);
+    if (!salon) {
+      throw new AppError("Salon not found", 404);
+    }
+
+    // Create user (approved by admin, but not by owner yet)
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: "staff",
+      isApproved: true, // Admin approval not needed for staff (owner approves)
+      staffSalonId: salonId,
+    });
+
+    // Create staff record (not approved by owner yet)
+    const Staff = (await import("../models/staff.js")).default;
+    const staff = await Staff.create({
+      userId: user._id,
+      salonId,
+      name,
+      role: "stylist", // Default role, can be updated by owner
+      isApprovedByOwner: false,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Staff registration successful. Please wait for salon owner approval to login.",
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        salonId: salonId,
+        isApproved: false, // Not approved by owner yet
+      },
+    });
+  } else {
+    // For customers and owners, create user (not approved by admin)
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: userRole,
+      isApproved: false,
+    });
+
+    // If owner, link to salon if provided
+    if (userRole === "owner" && salonId) {
+      const Salon = (await import("../models/salon.js")).default;
+      const salon = await Salon.findById(salonId);
+      if (salon && salon.ownerId.toString() === user._id.toString()) {
+        await User.findByIdAndUpdate(user._id, { salonId });
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "Registration successful. Please wait for admin approval to login.",
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isApproved: user.isApproved,
+      },
+    });
+  }
 });
 
 // @desc    Login user (only if approved by admin)
@@ -63,12 +121,24 @@ export const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // Check if user is approved by admin
+  // Check if user is approved by admin (for customers and owners)
   if (!user.isApproved) {
     throw new AppError(
       "Your account is pending admin approval. Please wait for approval to login.",
       403
     );
+  }
+
+  // For staff: also check if approved by owner
+  if (user.role === "staff") {
+    const Staff = (await import("../models/staff.js")).default;
+    const staff = await Staff.findOne({ userId: user._id });
+    if (!staff || !staff.isApprovedByOwner) {
+      throw new AppError(
+        "Your staff account is pending owner approval. Please wait for the salon owner to approve your registration.",
+        403
+      );
+    }
   }
 
   // Generate token
