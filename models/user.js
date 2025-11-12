@@ -43,6 +43,27 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // For owners: link to their salon
+    salonId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Salon",
+      default: null,
+    },
+    // For staff: link to their salon and owner who approved them
+    staffSalonId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Salon",
+      default: null,
+    },
+    staffApprovedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User", // Owner who approved the staff
+      default: null,
+    },
+    staffApprovedAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

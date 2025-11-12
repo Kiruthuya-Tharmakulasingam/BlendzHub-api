@@ -2,14 +2,64 @@ import mongoose from "mongoose";
 
 const appointmentSchema = new mongoose.Schema(
   {
-    date: { type: Date, required: true },
-    status: { type: String, default: "pending" },
-    customerId: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
-    salonId: { type: mongoose.Schema.Types.ObjectId, ref: "Salon" },
-    serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
-    time: { type: String, required: true },
-    amount: { type: Number, required: true },
-    discount: { type: Number, default: 0 },
+    date: { 
+      type: Date, 
+      required: true 
+    },
+    time: { 
+      type: String, 
+      required: true 
+    },
+    status: { 
+      type: String, 
+      enum: ["pending", "accepted", "in-progress", "completed", "cancelled"],
+      default: "pending" 
+    },
+    // Links
+    customerId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", // Changed from Customer to User
+      required: true 
+    },
+    salonId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Salon",
+      required: true 
+    },
+    serviceId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Service",
+      required: true 
+    },
+    staffId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Staff",
+      required: true 
+    },
+    // Pricing
+    amount: { 
+      type: Number, 
+      required: true 
+    },
+    discount: { 
+      type: Number, 
+      default: 0 
+    },
+    // Timeline tracking
+    acceptedAt: {
+      type: Date,
+      default: null,
+    },
+    startedAt: {
+      type: Date,
+      default: null,
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    // Notes
+    notes: { type: String },
   },
   { timestamps: true }
 );
