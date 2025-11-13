@@ -19,9 +19,9 @@ router.get(
   getCustomerById
 );
 
-// Protected routes - only owner can create/update/delete customers
-router.post("/", verifyToken, verifyRole(["owner"]), createCustomer);
-router.put("/:id", verifyToken, verifyRole(["owner"]), updateCustomer);
-router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteCustomer);
+// Protected routes - only customer can create/update/delete customers
+router.post("/", verifyToken, verifyRole(["customer"]), createCustomer);
+router.put("/:id", verifyToken, verifyRole(["customer"]), updateCustomer);
+router.delete("/:id", verifyToken, verifyRole(["customer"]), deleteCustomer);
 
 export default router;
