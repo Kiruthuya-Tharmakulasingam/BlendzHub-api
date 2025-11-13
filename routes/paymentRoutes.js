@@ -17,13 +17,8 @@ router.get("/:id", verifyToken, getPaymentById);
 // Create: customers can pay for their completed appointments
 router.post("/", verifyToken, verifyCustomer, createPayment);
 
-// Update/Delete: only owner/staff
-router.put("/:id", verifyToken, verifyRole(["owner", "staff"]), updatePayment);
-router.delete(
-  "/:id",
-  verifyToken,
-  verifyRole(["owner", "staff"]),
-  deletePayment
-);
+// Update/Delete: only customer
+router.put("/:id", verifyToken, verifyRole(["customer"]), updatePayment);
+router.delete("/:id", verifyToken, verifyRole(["customer"]), deletePayment);
 
 export default router;
