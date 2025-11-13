@@ -15,8 +15,13 @@ router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 
 // Protected routes - only owner can create/update/delete products
-router.post("/", verifyToken, verifyRole(["owner"]), createProduct);
-router.put("/:id", verifyToken, verifyRole(["owner"]), updateProduct);
-router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteProduct);
+router.post("/", verifyToken, verifyRole(["owner", "staff"]), createProduct);
+router.put("/:id", verifyToken, verifyRole(["owner", "staff"]), updateProduct);
+router.delete(
+  "/:id",
+  verifyToken,
+  verifyRole(["owner", "staff"]),
+  deleteProduct
+);
 
 export default router;

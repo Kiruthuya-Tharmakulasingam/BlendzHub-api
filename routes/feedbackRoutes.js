@@ -18,9 +18,9 @@ router.get("/:id", verifyToken, getFeedbackById);
 router.post("/", verifyToken, verifyRole(["customer"]), createFeedback);
 
 // Update: staff can moderate
-router.put("/:id", verifyToken, verifyRole(["staff"]), updateFeedback);
+router.put("/:id", verifyToken, verifyRole(["customer"]), updateFeedback);
 
 // Delete: admin can remove inappropriate content
-router.delete("/:id", verifyToken, verifyRole(["staff"]), deleteFeedback);
+router.delete("/:id", verifyToken, verifyRole(["admin"]), deleteFeedback);
 
 export default router;

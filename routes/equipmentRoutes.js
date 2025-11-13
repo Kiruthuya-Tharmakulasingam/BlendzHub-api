@@ -15,8 +15,18 @@ router.get("/", getAllEquipments);
 router.get("/:id", getEquipmentById);
 
 // Protected routes - only owner can create/update/delete equipment
-router.post("/", verifyToken, verifyRole(["owner"]), createEquipment);
-router.put("/:id", verifyToken, verifyRole(["owner"]), updateEquipment);
-router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteEquipment);
+router.post("/", verifyToken, verifyRole(["owner", "staff"]), createEquipment);
+router.put(
+  "/:id",
+  verifyToken,
+  verifyRole(["owner", "staff"]),
+  updateEquipment
+);
+router.delete(
+  "/:id",
+  verifyToken,
+  verifyRole(["owner", "staff"]),
+  deleteEquipment
+);
 
 export default router;
