@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/:id", getProductById);
 
-// Protected routes - only owner can create/update/delete products
+// Protected routes - owner/staff can create/update/delete products
 router.post("/", verifyToken, verifyRole(["owner", "staff"]), createProduct);
 router.put("/:id", verifyToken, verifyRole(["owner", "staff"]), updateProduct);
 router.delete(

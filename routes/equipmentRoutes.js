@@ -14,7 +14,7 @@ const router = express.Router();
 router.get("/", getAllEquipments);
 router.get("/:id", getEquipmentById);
 
-// Protected routes - only owner can create/update/delete equipment
+// Protected routes - owner/staff can create/update/delete equipment
 router.post("/", verifyToken, verifyRole(["owner", "staff"]), createEquipment);
 router.put(
   "/:id",

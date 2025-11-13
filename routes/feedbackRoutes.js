@@ -17,7 +17,7 @@ router.get("/:id", verifyToken, getFeedbackById);
 // Create: customers can post feedback
 router.post("/", verifyToken, verifyRole(["customer"]), createFeedback);
 
-// Update: staff can moderate
+// Update: customer can moderate
 router.put("/:id", verifyToken, verifyRole(["customer"]), updateFeedback);
 
 // Delete: admin can remove inappropriate content
