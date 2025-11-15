@@ -3,11 +3,22 @@ import Salon from "../models/salon.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllEquipments = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, status, salonId } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    salonId,
+    assignedToStaffId,
+    search,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    startDate,
+    endDate,
+    lastSterlizedStartDate,
+    lastSterlizedEndDate,
+  } = req.query;
+
   const filter = {};
-  
-  if (status) filter.status = status;
-  if (salonId) filter.salonId = salonId;
 
   // Role-based filtering (if authenticated)
   if (req.user) {
@@ -19,15 +30,94 @@ export const getAllEquipments = asyncHandler(async (req, res) => {
     }
   }
 
+  // Status filtering - supports single value or comma-separated values
+  if (status) {
+    const statusArray = status.split(",").map((s) => s.trim());
+    if (statusArray.length === 1) {
+      filter.status = statusArray[0];
+    } else {
+      filter.status = { $in: statusArray };
+    }
+  }
+
+  // ID-based filtering
+  if (salonId) filter.salonId = salonId;
+  if (assignedToStaffId) filter.assignedToStaffId = assignedToStaffId;
+
+  // Date range filtering (createdAt)
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) {
+      filter.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  // Last sterilized date range filtering
+  if (lastSterlizedStartDate || lastSterlizedEndDate) {
+    filter.lastSterlizedDate = {};
+    if (lastSterlizedStartDate) {
+      filter.lastSterlizedDate.$gte = new Date(lastSterlizedStartDate);
+    }
+    if (lastSterlizedEndDate) {
+      const end = new Date(lastSterlizedEndDate);
+      end.setHours(23, 59, 59, 999);
+      filter.lastSterlizedDate.$lte = end;
+    }
+  }
+
+  // Text search in name
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    if (Object.keys(filter).length > 0) {
+      const combinedFilter = {
+        $and: [
+          { ...filter },
+          { name: searchRegex },
+        ],
+      };
+      Object.keys(filter).forEach((key) => delete filter[key]);
+      Object.assign(filter, combinedFilter);
+    } else {
+      filter.name = searchRegex;
+    }
+  }
+
+  // Validate sortBy field
+  const allowedSortFields = ["name", "status", "lastSterlizedDate", "createdAt", "updatedAt"];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+  const sort = { [sortField]: sortDirection };
+
+  // Get total count with filters
   const total = await Equipment.countDocuments(filter);
+
+  // Calculate pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+  const skip = (pageNum - 1) * limitNum;
+  const totalPages = Math.ceil(total / limitNum);
+
+  // Fetch equipment with filters, sorting, and pagination
   const equipments = await Equipment.find(filter)
     .populate("salonId", "name location")
     .populate("assignedToStaffId", "name role")
-    .skip((page - 1) * limit)
-    .limit(Number(limit))
-    .sort({ createdAt: -1 });
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
   
-  res.json({ success: true, total, data: equipments });
+  res.json({
+    success: true,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages,
+    data: equipments,
+  });
 });
 
 export const getEquipmentById = asyncHandler(async (req, res) => {

@@ -5,23 +5,99 @@ import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 // @route   GET /api/admin/users
 // @access  Private/Admin
 export const getAllUsers = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, role, isApproved } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    role,
+    isApproved,
+    search,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    startDate,
+    endDate,
+  } = req.query;
   
   const filter = {};
-  if (role) filter.role = role;
-  if (isApproved !== undefined) filter.isApproved = isApproved === "true";
 
+  // Role filtering - supports single value or comma-separated values
+  if (role) {
+    const roleArray = role.split(",").map((r) => r.trim());
+    if (roleArray.length === 1) {
+      filter.role = roleArray[0];
+    } else {
+      filter.role = { $in: roleArray };
+    }
+  }
+
+  // Approval status filtering
+  if (isApproved !== undefined) {
+    filter.isApproved = isApproved === "true";
+  }
+
+  // Date range filtering
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) {
+      filter.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  // Text search in name and email
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    const searchConditions = [
+      { name: searchRegex },
+      { email: searchRegex },
+    ];
+
+    if (Object.keys(filter).length > 0) {
+      const combinedFilter = {
+        $and: [
+          { ...filter },
+          { $or: searchConditions },
+        ],
+      };
+      Object.keys(filter).forEach((key) => delete filter[key]);
+      Object.assign(filter, combinedFilter);
+    } else {
+      filter.$or = searchConditions;
+    }
+  }
+
+  // Validate sortBy field
+  const allowedSortFields = ["name", "email", "role", "isApproved", "createdAt", "updatedAt"];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+  const sort = { [sortField]: sortDirection };
+
+  // Get total count with filters
   const total = await User.countDocuments(filter);
+
+  // Calculate pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+  const skip = (pageNum - 1) * limitNum;
+  const totalPages = Math.ceil(total / limitNum);
+
+  // Fetch users with filters, sorting, and pagination
   const users = await User.find(filter)
     .select("-password")
     .populate("approvedBy", "name email")
-    .skip((page - 1) * limit)
-    .limit(Number(limit))
-    .sort({ createdAt: -1 });
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
 
   res.json({
     success: true,
     total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages,
     data: users,
   });
 });

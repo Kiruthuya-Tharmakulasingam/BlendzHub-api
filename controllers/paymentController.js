@@ -4,11 +4,27 @@ import Staff from "../models/staff.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllPayments = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, method, status } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    method,
+    status,
+    salonId,
+    staffId,
+    customerId,
+    appointmentId,
+    minAmount,
+    maxAmount,
+    amount,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    startDate,
+    endDate,
+    paymentStartDate,
+    paymentEndDate,
+  } = req.query;
+
   const filter = {};
-  
-  if (method) filter.method = method;
-  if (status) filter.status = status;
 
   // Role-based filtering
   if (req.user.role === "customer") {
@@ -20,17 +36,102 @@ export const getAllPayments = asyncHandler(async (req, res) => {
   }
   // Admin sees all
 
+  // Method filtering - supports single value or comma-separated values
+  if (method) {
+    const methodArray = method.split(",").map((m) => m.trim());
+    if (methodArray.length === 1) {
+      filter.method = methodArray[0];
+    } else {
+      filter.method = { $in: methodArray };
+    }
+  }
+
+  // Status filtering - supports single value or comma-separated values
+  if (status) {
+    const statusArray = status.split(",").map((s) => s.trim());
+    if (statusArray.length === 1) {
+      filter.status = statusArray[0];
+    } else {
+      filter.status = { $in: statusArray };
+    }
+  }
+
+  // ID-based filtering
+  if (salonId) filter.salonId = salonId;
+  if (staffId) filter.staffId = staffId;
+  if (customerId && req.user.role !== "customer") filter.customerId = customerId;
+  if (appointmentId) filter.appointmentId = appointmentId;
+
+  // Amount filtering
+  if (amount) {
+    filter.amount = Number(amount);
+  } else {
+    if (minAmount || maxAmount) {
+      filter.amount = {};
+      if (minAmount) filter.amount.$gte = Number(minAmount);
+      if (maxAmount) filter.amount.$lte = Number(maxAmount);
+    }
+  }
+
+  // Date range filtering (createdAt)
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) {
+      filter.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  // Payment date range filtering (date field)
+  if (paymentStartDate || paymentEndDate) {
+    filter.date = {};
+    if (paymentStartDate) {
+      filter.date.$gte = new Date(paymentStartDate);
+    }
+    if (paymentEndDate) {
+      const end = new Date(paymentEndDate);
+      end.setHours(23, 59, 59, 999);
+      filter.date.$lte = end;
+    }
+  }
+
+  // Validate sortBy field
+  const allowedSortFields = ["date", "amount", "method", "status", "createdAt", "updatedAt"];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+  const sort = { [sortField]: sortDirection };
+
+  // Get total count with filters
   const total = await Payment.countDocuments(filter);
+
+  // Calculate pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+  const skip = (pageNum - 1) * limitNum;
+  const totalPages = Math.ceil(total / limitNum);
+
+  // Fetch payments with filters, sorting, and pagination
   const payments = await Payment.find(filter)
     .populate("appointmentId")
     .populate("customerId", "name email")
     .populate("staffId", "name")
     .populate("salonId", "name")
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * limit)
-    .limit(Number(limit));
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
   
-  res.json({ success: true, total, data: payments });
+  res.json({
+    success: true,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages,
+    data: payments,
+  });
 });
 
 export const getPaymentById = asyncHandler(async (req, res) => {

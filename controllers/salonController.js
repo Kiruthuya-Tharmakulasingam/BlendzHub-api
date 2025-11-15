@@ -2,15 +2,100 @@ import Salon from "../models/salon.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllSalons = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, type } = req.query;
-  const filter = type ? { type } : {};
+  const {
+    page = 1,
+    limit = 10,
+    type,
+    ownerId,
+    search,
+    sortBy = "createdAt",
+    sortOrder = "desc",
+    startDate,
+    endDate,
+  } = req.query;
+
+  const filter = {};
+
+  // Type filtering - supports single value or comma-separated values
+  if (type) {
+    const typeArray = type.split(",").map((t) => t.trim());
+    if (typeArray.length === 1) {
+      filter.type = typeArray[0];
+    } else {
+      filter.type = { $in: typeArray };
+    }
+  }
+
+  // ID-based filtering
+  if (ownerId) filter.ownerId = ownerId;
+
+  // Date range filtering
+  if (startDate || endDate) {
+    filter.createdAt = {};
+    if (startDate) {
+      filter.createdAt.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.createdAt.$lte = end;
+    }
+  }
+
+  // Text search in name, location, phone, email
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    const searchConditions = [
+      { name: searchRegex },
+      { location: searchRegex },
+      { phone: searchRegex },
+      { email: searchRegex },
+    ];
+
+    if (Object.keys(filter).length > 0) {
+      const combinedFilter = {
+        $and: [
+          { ...filter },
+          { $or: searchConditions },
+        ],
+      };
+      Object.keys(filter).forEach((key) => delete filter[key]);
+      Object.assign(filter, combinedFilter);
+    } else {
+      filter.$or = searchConditions;
+    }
+  }
+
+  // Validate sortBy field
+  const allowedSortFields = ["name", "location", "type", "createdAt", "updatedAt"];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
+  const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
+  const sort = { [sortField]: sortDirection };
+
+  // Get total count with filters
   const total = await Salon.countDocuments(filter);
+
+  // Calculate pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+  const skip = (pageNum - 1) * limitNum;
+  const totalPages = Math.ceil(total / limitNum);
+
+  // Fetch salons with filters, sorting, and pagination
   const salons = await Salon.find(filter)
     .populate("ownerId", "name email")
-    .skip((page - 1) * limit)
-    .limit(Number(limit))
-    .sort({ createdAt: -1 });
-  res.json({ success: true, total, data: salons });
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
+
+  res.json({
+    success: true,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages,
+    data: salons,
+  });
 });
 
 export const getSalonById = asyncHandler(async (req, res) => {

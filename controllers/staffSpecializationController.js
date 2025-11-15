@@ -47,11 +47,52 @@ export const getStaffByService = asyncHandler(async (req, res) => {
 // @route   GET /api/staff/specializations
 // @access  Public
 export const getAllSpecializations = asyncHandler(async (req, res) => {
-  const { salonId } = req.query;
+  const {
+    salonId,
+    serviceId,
+    search,
+    role,
+    sortBy = "name",
+    sortOrder = "asc",
+  } = req.query;
 
   const filter = { isApprovedByOwner: true };
+
+  // Salon filtering
   if (salonId) {
     filter.salonId = salonId;
+  }
+
+  // Service filtering - filter staff by specific service specialization
+  if (serviceId) {
+    filter.specializations = serviceId;
+  }
+
+  // Role filtering
+  if (role) {
+    const roleArray = role.split(",").map((r) => r.trim());
+    if (roleArray.length === 1) {
+      filter.role = roleArray[0];
+    } else {
+      filter.role = { $in: roleArray };
+    }
+  }
+
+  // Text search in staff name
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    if (Object.keys(filter).length > 0) {
+      const combinedFilter = {
+        $and: [
+          { ...filter },
+          { name: searchRegex },
+        ],
+      };
+      Object.keys(filter).forEach((key) => delete filter[key]);
+      Object.assign(filter, combinedFilter);
+    } else {
+      filter.name = searchRegex;
+    }
   }
 
   const staff = await Staff.find(filter)
@@ -86,10 +127,26 @@ export const getAllSpecializations = asyncHandler(async (req, res) => {
     });
   });
 
+  // Convert to array and sort
+  let result = Array.from(serviceMap.values());
+
+  // Sort by service name or price
+  if (sortBy === "name") {
+    result.sort((a, b) => {
+      const comparison = a.service.name.localeCompare(b.service.name);
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  } else if (sortBy === "price") {
+    result.sort((a, b) => {
+      const comparison = a.service.price - b.service.price;
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }
+
   res.json({
     success: true,
-    total: serviceMap.size,
-    data: Array.from(serviceMap.values()),
+    total: result.length,
+    data: result,
   });
 });
 

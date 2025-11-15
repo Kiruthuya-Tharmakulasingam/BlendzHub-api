@@ -6,8 +6,24 @@ import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 // GET all appointments (with pagination + filter)
 // Customers see their own, staff see their own, owners see their salon's, admin sees all
 export const getAllAppointments = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, status } = req.query;
-  const filter = status ? { status } : {};
+  const {
+    page = 1,
+    limit = 10,
+    status,
+    search,
+    salonId,
+    serviceId,
+    staffId,
+    customerId,
+    sortBy = "date",
+    sortOrder = "asc",
+    startDate,
+    endDate,
+    minAmount,
+    maxAmount,
+  } = req.query;
+
+  const filter = {};
 
   // Role-based filtering
   if (req.user.role === "customer") {
@@ -19,17 +35,95 @@ export const getAllAppointments = asyncHandler(async (req, res) => {
   }
   // Admin sees all (no filter)
 
+  // Status filtering - supports single value or comma-separated values
+  if (status) {
+    const statusArray = status.split(",").map((s) => s.trim());
+    if (statusArray.length === 1) {
+      filter.status = statusArray[0];
+    } else {
+      filter.status = { $in: statusArray };
+    }
+  }
+
+  // ID-based filtering
+  if (salonId) filter.salonId = salonId;
+  if (serviceId) filter.serviceId = serviceId;
+  if (staffId) filter.staffId = staffId;
+  if (customerId && req.user.role !== "customer") filter.customerId = customerId;
+
+  // Date range filtering
+  if (startDate || endDate) {
+    filter.date = {};
+    if (startDate) {
+      filter.date.$gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filter.date.$lte = end;
+    }
+  }
+
+  // Amount range filtering
+  if (minAmount || maxAmount) {
+    filter.amount = {};
+    if (minAmount) filter.amount.$gte = Number(minAmount);
+    if (maxAmount) filter.amount.$lte = Number(maxAmount);
+  }
+
+  // Text search in notes
+  if (search) {
+    const searchRegex = new RegExp(search, "i");
+    if (Object.keys(filter).length > 0) {
+      const combinedFilter = {
+        $and: [
+          { ...filter },
+          { notes: searchRegex },
+        ],
+      };
+      Object.keys(filter).forEach((key) => delete filter[key]);
+      Object.assign(filter, combinedFilter);
+    } else {
+      filter.notes = searchRegex;
+    }
+  }
+
+  // Validate sortBy field
+  const allowedSortFields = ["date", "time", "amount", "status", "createdAt", "updatedAt"];
+  const sortField = allowedSortFields.includes(sortBy) ? sortBy : "date";
+  const sortDirection = sortOrder.toLowerCase() === "desc" ? -1 : 1;
+  const sort = { [sortField]: sortDirection };
+  if (sortField === "date") {
+    sort.time = sortDirection; // Secondary sort by time when sorting by date
+  }
+
+  // Get total count with filters
   const total = await Appointment.countDocuments(filter);
+
+  // Calculate pagination
+  const pageNum = Math.max(1, parseInt(page));
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit)));
+  const skip = (pageNum - 1) * limitNum;
+  const totalPages = Math.ceil(total / limitNum);
+
+  // Fetch appointments with filters, sorting, and pagination
   const appointments = await Appointment.find(filter)
     .populate("customerId", "name email")
     .populate("serviceId", "name price")
     .populate("salonId", "name location")
     .populate("staffId", "name role")
-    .sort({ date: 1, time: 1 })
-    .skip((page - 1) * limit)
-    .limit(Number(limit));
+    .sort(sort)
+    .skip(skip)
+    .limit(limitNum);
 
-  res.json({ success: true, total, data: appointments });
+  res.json({
+    success: true,
+    total,
+    page: pageNum,
+    limit: limitNum,
+    totalPages,
+    data: appointments,
+  });
 });
 
 // GET single appointment
