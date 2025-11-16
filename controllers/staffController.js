@@ -56,10 +56,7 @@ export const getMyAppointments = asyncHandler(async (req, res) => {
     const searchRegex = new RegExp(search, "i");
     if (Object.keys(filter).length > 0) {
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { notes: searchRegex },
-        ],
+        $and: [{ ...filter }, { notes: searchRegex }],
       };
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
@@ -69,7 +66,13 @@ export const getMyAppointments = asyncHandler(async (req, res) => {
   }
 
   // Validate sortBy field
-  const allowedSortFields = ["date", "time", "status", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "date",
+    "time",
+    "status",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "date";
   const sortDirection = sortOrder.toLowerCase() === "desc" ? -1 : 1;
   const sort = { [sortField]: sortDirection };
@@ -128,7 +131,9 @@ export const acceptAppointment = asyncHandler(async (req, res) => {
 
   // Create notification for customer
   const Notification = (await import("../models/notification.js")).default;
-  const customer = await import("../models/user.js").then(m => m.default.findById(appointment.customerId));
+  const customer = await import("../models/user.js").then((m) =>
+    m.default.findById(appointment.customerId)
+  );
   if (customer) {
     await Notification.create({
       userId: customer._id,
@@ -255,23 +260,23 @@ export const getMyProducts = asyncHandler(async (req, res) => {
   // Text search in name and supplier
   if (search) {
     const searchRegex = new RegExp(search, "i");
-    const searchConditions = [
-      { name: searchRegex },
-      { supplier: searchRegex },
-    ];
+    const searchConditions = [{ name: searchRegex }, { supplier: searchRegex }];
 
     const combinedFilter = {
-      $and: [
-        { ...filter },
-        { $or: searchConditions },
-      ],
+      $and: [{ ...filter }, { $or: searchConditions }],
     };
     Object.keys(filter).forEach((key) => delete filter[key]);
     Object.assign(filter, combinedFilter);
   }
 
   // Validate sortBy field
-  const allowedSortFields = ["name", "supplier", "qualityRating", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "name",
+    "supplier",
+    "qualityRating",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
   const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
   const sort = { [sortField]: sortDirection };
@@ -348,10 +353,7 @@ export const getMyEquipment = asyncHandler(async (req, res) => {
   if (search) {
     const searchRegex = new RegExp(search, "i");
     const combinedFilter = {
-      $and: [
-        { ...filter },
-        { name: searchRegex },
-      ],
+      $and: [{ ...filter }, { name: searchRegex }],
     };
     Object.keys(filter).forEach((key) => delete filter[key]);
     Object.assign(filter, combinedFilter);
@@ -491,10 +493,7 @@ export const getMyFeedback = asyncHandler(async (req, res) => {
   if (search) {
     const searchRegex = new RegExp(search, "i");
     const combinedFilter = {
-      $and: [
-        { ...filter },
-        { comments: searchRegex },
-      ],
+      $and: [{ ...filter }, { comments: searchRegex }],
     };
     Object.keys(filter).forEach((key) => delete filter[key]);
     Object.assign(filter, combinedFilter);
