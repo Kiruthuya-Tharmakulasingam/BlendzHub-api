@@ -58,8 +58,8 @@ export const protect = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // Check if user is approved by admin (for customers and owners)
-    if (!req.user.isApproved) {
+    // Check if user is approved by admin (skip check for customers - they can access immediately)
+    if (req.user.role !== "customer" && !req.user.isApproved) {
       return next(
         new AppError(
           "Your account is pending admin approval. Please wait for approval to access this route.",

@@ -64,13 +64,14 @@ export const register = asyncHandler(async (req, res) => {
       },
     });
   } else {
-    // For customers and owners, create user (not approved by admin)
+    // For customers: auto-approve, for owners: require admin approval
+    const isCustomer = userRole === "customer";
     const user = await User.create({
       name,
       email,
       password,
       role: userRole,
-      isApproved: false,
+      isApproved: isCustomer, // Customers are auto-approved, owners need admin approval
     });
 
     // If owner, link to salon if provided
@@ -82,9 +83,13 @@ export const register = asyncHandler(async (req, res) => {
       }
     }
 
+    const message = isCustomer
+      ? "Registration successful. You can now login."
+      : "Registration successful. Please wait for admin approval to login.";
+
     res.status(201).json({
       success: true,
-      message: "Registration successful. Please wait for admin approval to login.",
+      message,
       data: {
         id: user._id,
         name: user.name,
@@ -96,7 +101,7 @@ export const register = asyncHandler(async (req, res) => {
   }
 });
 
-// @desc    Login user (only if approved by admin)
+// @desc    Login user (customers can login immediately, others need admin approval)
 // @route   POST /api/auth/login
 // @access  Public
 export const login = asyncHandler(async (req, res) => {
@@ -121,8 +126,16 @@ export const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // Check if user is approved by admin (for customers and owners)
-  if (!user.isApproved) {
+  // Check if user is approved by admin (skip check for customers - they can log in immediately)
+  // Also auto-approve existing customers who might have been created before this change
+  if (user.role === "customer") {
+    // Auto-approve customers if not already approved
+    if (!user.isApproved) {
+      user.isApproved = true;
+      await user.save();
+    }
+  } else if (!user.isApproved) {
+    // For non-customers, require approval
     throw new AppError(
       "Your account is pending admin approval. Please wait for approval to login.",
       403
