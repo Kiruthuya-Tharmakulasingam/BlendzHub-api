@@ -140,13 +140,13 @@ export const login = asyncHandler(async (req, res) => {
     success: true,
     message: "Login successful",
     token,
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isApproved: user.isApproved,
-    },
+    // data: {
+    //   id: user._id,
+    //   name: user.name,
+    //   email: user.email,
+    //   role: user.role,
+    //   isApproved: user.isApproved,
+    // },
   });
 });
 

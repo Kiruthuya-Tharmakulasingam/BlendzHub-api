@@ -16,7 +16,7 @@ export const getAllUsers = asyncHandler(async (req, res) => {
     startDate,
     endDate,
   } = req.query;
-  
+
   const filter = {};
 
   // Role filtering - supports single value or comma-separated values
@@ -50,17 +50,11 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   // Text search in name and email
   if (search) {
     const searchRegex = new RegExp(search, "i");
-    const searchConditions = [
-      { name: searchRegex },
-      { email: searchRegex },
-    ];
+    const searchConditions = [{ name: searchRegex }, { email: searchRegex }];
 
     if (Object.keys(filter).length > 0) {
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { $or: searchConditions },
-        ],
+        $and: [{ ...filter }, { $or: searchConditions }],
       };
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
@@ -70,7 +64,14 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   }
 
   // Validate sortBy field
-  const allowedSortFields = ["name", "email", "role", "isApproved", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "name",
+    "email",
+    "role",
+    "isApproved",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
   const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
   const sort = { [sortField]: sortDirection };
@@ -164,15 +165,15 @@ export const approveUser = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "User approved successfully",
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isApproved: user.isApproved,
-      approvedBy: user.approvedBy,
-      approvedAt: user.approvedAt,
-    },
+    // data: {
+    //   id: user._id,
+    //   name: user.name,
+    //   email: user.email,
+    //   role: user.role,
+    //   isApproved: user.isApproved,
+    //   approvedBy: user.approvedBy,
+    //   approvedAt: user.approvedAt,
+    // },
   });
 });
 
@@ -203,13 +204,13 @@ export const revokeUser = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "User access revoked successfully",
-    data: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isApproved: user.isApproved,
-    },
+    // data: {
+    //   id: user._id,
+    //   name: user.name,
+    //   email: user.email,
+    //   role: user.role,
+    //   isApproved: user.isApproved,
+    // },
   });
 });
 
@@ -225,7 +226,10 @@ export const updateUserRole = asyncHandler(async (req, res) => {
   }
 
   if (!["owner", "admin", "staff", "user", "customer"].includes(role)) {
-    throw new AppError("Invalid role. Must be owner, admin, staff, user, or customer", 400);
+    throw new AppError(
+      "Invalid role. Must be owner, admin, staff, user, or customer",
+      400
+    );
   }
 
   // Prevent admin/owner from changing their own role
@@ -283,8 +287,14 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   // Validate role if being updated
-  if (updateData.role && !["owner", "admin", "staff", "user", "customer"].includes(updateData.role)) {
-    throw new AppError("Invalid role. Must be owner, admin, staff, user, or customer", 400);
+  if (
+    updateData.role &&
+    !["owner", "admin", "staff", "user", "customer"].includes(updateData.role)
+  ) {
+    throw new AppError(
+      "Invalid role. Must be owner, admin, staff, user, or customer",
+      400
+    );
   }
 
   // Prevent admin/owner from changing their own role
@@ -301,7 +311,9 @@ export const updateUser = asyncHandler(async (req, res) => {
   Object.assign(user, updateData);
   await user.save();
 
-  const updatedUser = await User.findById(user._id).select("-password").populate("approvedBy", "name email");
+  const updatedUser = await User.findById(user._id)
+    .select("-password")
+    .populate("approvedBy", "name email");
 
   res.json({
     success: true,
@@ -332,4 +344,3 @@ export const deleteUser = asyncHandler(async (req, res) => {
     message: "User deleted successfully",
   });
 });
-
