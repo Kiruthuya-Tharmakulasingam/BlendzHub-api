@@ -46,7 +46,9 @@ export const protect = asyncHandler(async (req, res, next) => {
 
     // Deny access if token is blacklisted (logged out)
     if (tokenBlacklist.has(token)) {
-      return next(new AppError("Token access denied. Please login again.", 401));
+      return next(
+        new AppError("Token access denied. Please login again.", 401)
+      );
     }
 
     // Get user from token
@@ -54,12 +56,22 @@ export const protect = asyncHandler(async (req, res, next) => {
 
     if (!req.user) {
       return next(
-        new AppError("User not found. The token is valid but the user no longer exists.", 404)
+        new AppError(
+          "User not found. The token is valid but the user no longer exists.",
+          404
+        )
       );
     }
 
-    // Check if user is approved by admin (skip check for customers - they can access immediately)
-    if (req.user.role !== "customer" && !req.user.isApproved) {
+    // Check if user is approved by admin (skip check for customers and staff - they can access immediately)
+    if (req.user.role === "customer" || req.user.role === "staff") {
+      // Auto-approve customers and staff if not already approved
+      if (!req.user.isApproved) {
+        req.user.isApproved = true;
+        await req.user.save();
+      }
+    } else if (!req.user.isApproved) {
+      // For owners and other roles, require admin approval
       return next(
         new AppError(
           "Your account is pending admin approval. Please wait for approval to access this route.",
@@ -68,14 +80,14 @@ export const protect = asyncHandler(async (req, res, next) => {
       );
     }
 
-    // For staff: also check if approved by owner
+    // For staff: attach staff info to request (no approval check needed)
     if (req.user.role === "staff") {
       const staff = await Staff.findOne({ userId: req.user._id });
-      if (!staff || !staff.isApprovedByOwner) {
+      if (!staff) {
         return next(
           new AppError(
-            "Your staff account is pending owner approval. Please wait for the salon owner to approve your registration.",
-            403
+            "Staff profile not found. Please contact your salon owner.",
+            404
           )
         );
       }
@@ -101,7 +113,9 @@ export const protect = asyncHandler(async (req, res, next) => {
     }
     return next(
       new AppError(
-        `Not authorized to access this route. ${error.message || "Authentication failed."}`,
+        `Not authorized to access this route. ${
+          error.message || "Authentication failed."
+        }`,
         401
       )
     );
@@ -126,7 +140,9 @@ export const authorize = (...roles) => {
 // Aliases matching requested naming
 export const verifyToken = protect;
 export const verifyRole = (allowedRoles) => {
-  const rolesArray = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
+  const rolesArray = Array.isArray(allowedRoles)
+    ? allowedRoles
+    : [allowedRoles];
   return authorize(...rolesArray);
 };
 
@@ -143,7 +159,9 @@ export const verifyOwner = asyncHandler(async (req, res, next) => {
 
   const salon = await Salon.findOne({ ownerId: req.user._id });
   if (!salon) {
-    return next(new AppError("You don't have a salon associated with your account", 404));
+    return next(
+      new AppError("You don't have a salon associated with your account", 404)
+    );
   }
 
   req.salon = salon;
@@ -161,10 +179,7 @@ export const verifyStaff = asyncHandler(async (req, res, next) => {
     return next(new AppError("Staff profile not found", 404));
   }
 
-  if (!staff.isApprovedByOwner) {
-    return next(new AppError("Your staff account is pending owner approval", 403));
-  }
-
+  // No approval check needed - staff added by owners can access immediately
   req.staff = staff;
   next();
 });
@@ -176,4 +191,3 @@ export const verifyCustomer = asyncHandler(async (req, res, next) => {
   }
   next();
 });
-

@@ -154,50 +154,50 @@ export const getAppointmentById = asyncHandler(async (req, res) => {
 });
 
 // CREATE appointment (customer booking)
+// Customers choose salon and service, staff is automatically assigned
 export const createAppointment = asyncHandler(async (req, res) => {
-  const { salonId, serviceId, staffId, date, time } = req.body;
+  const { salonId, serviceId, date, time } = req.body;
 
-  // Validate required fields
-  if (!salonId || !serviceId || !staffId || !date || !time) {
-    throw new AppError("Please provide salonId, serviceId, staffId, date, and time", 400);
+  // Validate required fields (staffId is no longer required)
+  if (!salonId || !serviceId || !date || !time) {
+    throw new AppError("Please provide salonId, serviceId, date, and time", 400);
   }
 
-  // Verify staff specializes in this service
-  const staff = await Staff.findById(staffId).populate("specializations");
-  if (!staff) {
-    throw new AppError("Staff member not found", 404);
+  // Verify salon exists
+  const Salon = (await import("../models/salon.js")).default;
+  const salon = await Salon.findById(salonId);
+  if (!salon) {
+    throw new AppError("Salon not found", 404);
   }
 
+  // Verify service exists
   const service = await Service.findById(serviceId);
   if (!service) {
     throw new AppError("Service not found", 404);
   }
 
-  // Check if staff specializes in this service
-  const hasSpecialization = staff.specializations.some(
-    (spec) => spec._id.toString() === serviceId
-  );
-  if (!hasSpecialization) {
-    throw new AppError(
-      "This staff member does not specialize in the selected service",
-      400
-    );
-  }
+  // Find available staff member who specializes in this service at this salon
+  const staff = await Staff.findOne({
+    salonId: salonId,
+    specializations: serviceId,
+  }).populate("specializations");
 
-  // Verify staff belongs to the selected salon
-  if (staff.salonId.toString() !== salonId) {
-    throw new AppError("Staff member does not belong to the selected salon", 400);
+  if (!staff) {
+    throw new AppError(
+      "No staff member available for this service at this salon. Please contact the salon.",
+      404
+    );
   }
 
   // Calculate amount (service price - discount)
   const amount = service.price - (service.discount || 0);
 
-  // Create appointment
+  // Create appointment with automatically assigned staff
   const appointment = await Appointment.create({
     customerId: req.user._id,
     salonId,
     serviceId,
-    staffId,
+    staffId: staff._id,
     date,
     time,
     amount,

@@ -34,7 +34,10 @@ router.delete("/users/:id", deleteUser);
 
 // Analytics routes (admin only)
 router.get("/analytics/salons", verifyRole("admin"), getSalonsWithAppointments);
-router.get("/analytics/salons/:salonId", verifyRole("admin"), getSalonStatistics);
+router.get(
+  "/analytics/salons/:salonId",
+  verifyRole("admin"),
+  getSalonStatistics
+);
 
 export default router;
-

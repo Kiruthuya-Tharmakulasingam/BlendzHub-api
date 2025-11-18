@@ -16,6 +16,14 @@ export const getAllSalons = asyncHandler(async (req, res) => {
 
   const filter = {};
 
+  // Owners can only see their own salon
+  if (req.user && req.user.role === "owner") {
+    filter.ownerId = req.user._id;
+  } else if (ownerId) {
+    // Only allow ownerId filter for non-owners (admin, etc.)
+    filter.ownerId = ownerId;
+  }
+
   // Type filtering - supports single value or comma-separated values
   if (type) {
     const typeArray = type.split(",").map((t) => t.trim());
@@ -25,9 +33,6 @@ export const getAllSalons = asyncHandler(async (req, res) => {
       filter.type = { $in: typeArray };
     }
   }
-
-  // ID-based filtering
-  if (ownerId) filter.ownerId = ownerId;
 
   // Date range filtering
   if (startDate || endDate) {

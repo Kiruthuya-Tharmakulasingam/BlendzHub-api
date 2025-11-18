@@ -36,4 +36,3 @@ router.put("/staff/:id", updateStaff);
 router.delete("/staff/:id", deleteStaff);
 
 export default router;
-

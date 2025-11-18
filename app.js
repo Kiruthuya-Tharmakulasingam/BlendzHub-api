@@ -8,7 +8,6 @@ import adminRoutes from "./routes/adminRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
-import staffSpecializationRoutes from "./routes/staffSpecializationRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
@@ -35,13 +34,15 @@ app.get("/", (req, res) => {
     message: "Welcome to Our App",
     debug: {
       hasJwtSecret: !!process.env.JWT_SECRET,
-      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+      jwtSecretLength: process.env.JWT_SECRET
+        ? process.env.JWT_SECRET.length
+        : 0,
       hasMongoUri: !!process.env.MONGO_URI,
       nodeEnv: process.env.NODE_ENV,
-      message: process.env.JWT_SECRET 
-        ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")" 
-        : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables"
-    }
+      message: process.env.JWT_SECRET
+        ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")"
+        : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables",
+    },
   });
 });
 
@@ -52,9 +53,9 @@ app.get("/api/debug/env", (req, res) => {
     jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
     hasMongoUri: !!process.env.MONGO_URI,
     nodeEnv: process.env.NODE_ENV,
-    message: process.env.JWT_SECRET 
-      ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")" 
-      : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables"
+    message: process.env.JWT_SECRET
+      ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")"
+      : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables",
   });
 });
 
@@ -72,9 +73,6 @@ app.use("/api/owner", ownerRoutes);
 
 // Staff routes (staff only)
 app.use("/api/staff", staffRoutes);
-
-// Staff specializations (public)
-app.use("/api/staff-specializations", staffSpecializationRoutes);
 
 // Notification routes (authenticated users)
 app.use("/api/notifications", notificationRoutes);

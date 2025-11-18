@@ -18,87 +18,48 @@ export const register = asyncHandler(async (req, res) => {
 
   const userRole = role || "user";
 
-  // For staff registration, salonId is required
+  // Staff cannot register - they must be added by salon owners
   if (userRole === "staff") {
-    if (!salonId) {
-      throw new AppError("Staff registration requires salonId", 400);
-    }
+    throw new AppError(
+      "Staff registration is not allowed. Please contact your salon owner to be added as staff.",
+      400
+    );
+  }
 
-    // Verify salon exists
+  // For customers: auto-approve, for owners: require admin approval
+  const isCustomer = userRole === "customer";
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: userRole,
+    isApproved: isCustomer, // Customers are auto-approved, owners need admin approval
+  });
+
+  // If owner, link to salon if provided
+  if (userRole === "owner" && salonId) {
     const Salon = (await import("../models/salon.js")).default;
     const salon = await Salon.findById(salonId);
-    if (!salon) {
-      throw new AppError("Salon not found", 404);
+    if (salon && salon.ownerId.toString() === user._id.toString()) {
+      await User.findByIdAndUpdate(user._id, { salonId });
     }
-
-    // Create user (approved by admin, but not by owner yet)
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: "staff",
-      isApproved: true, // Admin approval not needed for staff (owner approves)
-      staffSalonId: salonId,
-    });
-
-    // Create staff record (not approved by owner yet)
-    const Staff = (await import("../models/staff.js")).default;
-    const staff = await Staff.create({
-      userId: user._id,
-      salonId,
-      name,
-      role: "stylist", // Default role, can be updated by owner
-      isApprovedByOwner: false,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Staff registration successful. Please wait for salon owner approval to login.",
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        salonId: salonId,
-        isApproved: false, // Not approved by owner yet
-      },
-    });
-  } else {
-    // For customers: auto-approve, for owners: require admin approval
-    const isCustomer = userRole === "customer";
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role: userRole,
-      isApproved: isCustomer, // Customers are auto-approved, owners need admin approval
-    });
-
-    // If owner, link to salon if provided
-    if (userRole === "owner" && salonId) {
-      const Salon = (await import("../models/salon.js")).default;
-      const salon = await Salon.findById(salonId);
-      if (salon && salon.ownerId.toString() === user._id.toString()) {
-        await User.findByIdAndUpdate(user._id, { salonId });
-      }
-    }
-
-    const message = isCustomer
-      ? "Registration successful. You can now login."
-      : "Registration successful. Please wait for admin approval to login.";
-
-    res.status(201).json({
-      success: true,
-      message,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isApproved: user.isApproved,
-      },
-    });
   }
+
+  const message = isCustomer
+    ? "Registration successful. You can now login."
+    : "Registration successful. Please wait for admin approval to login.";
+
+  res.status(201).json({
+    success: true,
+    message,
+    // data: {
+    //   id: user._id,
+    //   name: user.name,
+    //   email: user.email,
+    //   role: user.role,
+    //   isApproved: user.isApproved,
+    // },
+  });
 });
 
 // @desc    Login user (customers can login immediately, others need admin approval)
@@ -126,32 +87,36 @@ export const login = asyncHandler(async (req, res) => {
     throw new AppError("Invalid credentials", 401);
   }
 
-  // Check if user is approved by admin (skip check for customers - they can log in immediately)
-  // Also auto-approve existing customers who might have been created before this change
+  // Check if user is approved by admin (skip check for customers and staff - they can log in immediately)
+  // Also auto-approve existing customers/staff who might have been created before this change
   if (user.role === "customer") {
     // Auto-approve customers if not already approved
     if (!user.isApproved) {
       user.isApproved = true;
       await user.save();
     }
+  } else if (user.role === "staff") {
+    // Staff can login without owner approval (they are added by owners)
+    // Auto-approve staff if not already approved
+    if (!user.isApproved) {
+      user.isApproved = true;
+      await user.save();
+    }
+    // Verify staff record exists
+    const Staff = (await import("../models/staff.js")).default;
+    const staff = await Staff.findOne({ userId: user._id });
+    if (!staff) {
+      throw new AppError(
+        "Staff profile not found. Please contact your salon owner.",
+        404
+      );
+    }
   } else if (!user.isApproved) {
-    // For non-customers, require approval
+    // For owners and other roles, require admin approval
     throw new AppError(
       "Your account is pending admin approval. Please wait for approval to login.",
       403
     );
-  }
-
-  // For staff: also check if approved by owner
-  if (user.role === "staff") {
-    const Staff = (await import("../models/staff.js")).default;
-    const staff = await Staff.findOne({ userId: user._id });
-    if (!staff || !staff.isApprovedByOwner) {
-      throw new AppError(
-        "Your staff account is pending owner approval. Please wait for the salon owner to approve your registration.",
-        403
-      );
-    }
   }
 
   // Generate token
@@ -159,7 +124,10 @@ export const login = asyncHandler(async (req, res) => {
   try {
     token = generateToken(user._id);
   } catch (error) {
-    if (error.code === "JWT_SECRET_MISSING" || error.code === "JWT_SECRET_INVALID") {
+    if (
+      error.code === "JWT_SECRET_MISSING" ||
+      error.code === "JWT_SECRET_INVALID"
+    ) {
       throw new AppError(
         "Server configuration error: JWT_SECRET is not set in Vercel. Please add it in Vercel Dashboard → Settings → Environment Variables and redeploy.",
         500
@@ -207,6 +175,7 @@ export const logout = asyncHandler(async (req, res) => {
   }
 
   blacklistToken(token);
-  res.status(200).json({ success: true, message: "Logged out. Token access denied." });
+  res
+    .status(200)
+    .json({ success: true, message: "Logged out. Token access denied." });
 });
- 
