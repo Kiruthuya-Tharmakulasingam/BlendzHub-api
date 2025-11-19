@@ -17,6 +17,7 @@ import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import salonRoutes from "./routes/salonRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
+import slotRoutes from "./routes/slotRoutes.js";
 
 import errorHandler from "./middleware/errorhandler.js";
 
@@ -86,6 +87,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/salons", salonRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);
 

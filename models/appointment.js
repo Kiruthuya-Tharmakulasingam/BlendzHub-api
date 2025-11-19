@@ -2,62 +2,61 @@ import mongoose from "mongoose";
 
 const appointmentSchema = new mongoose.Schema(
   {
-    date: { 
-      type: Date, 
-      required: true 
+    date: {
+      type: Date,
+      required: true,
     },
-    time: { 
-      type: String, 
-      required: true 
+    time: {
+      type: String,
+      required: true,
     },
-    status: { 
-      type: String, 
-      enum: ["pending", "accepted", "in-progress", "completed", "cancelled"],
-      default: "pending" 
+    status: {
+      type: String,
+      enum: [
+        "pending",
+        "accepted",
+        "in-progress",
+        "completed",
+        "cancelled",
+        "no-show",
+      ],
+      default: "pending",
     },
     // Links
-    customerId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "User", // Changed from Customer to User
-      required: true 
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-    salonId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    salonId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Salon",
-      required: true 
+      required: true,
     },
-    serviceId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    serviceId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Service",
-      required: true 
+      required: true,
     },
-    staffId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    staffId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Staff",
-      required: true 
+      required: true,
     },
     // Pricing
-    amount: { 
-      type: Number, 
-      required: true 
+    amount: {
+      type: Number,
+      required: true,
     },
-    discount: { 
-      type: Number, 
-      default: 0 
+    discount: {
+      type: Number,
+      default: 0,
     },
     // Timeline tracking
-    acceptedAt: {
-      type: Date,
-      default: null,
-    },
-    startedAt: {
-      type: Date,
-      default: null,
-    },
-    completedAt: {
-      type: Date,
-      default: null,
-    },
+    acceptedAt: { type: Date, default: null },
+    startedAt: { type: Date, default: null },
+    completedAt: { type: Date, default: null },
+    noShowAt: { type: Date, default: null },
     // Notes
     notes: { type: String },
   },
