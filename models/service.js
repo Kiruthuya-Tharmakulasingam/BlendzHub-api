@@ -6,6 +6,9 @@ const serviceSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     description: { type: String, trim: true },
     discount: { type: Number, default: 0 },
+
+    // Add duration in minutes
+    duration: { type: Number, required: true },
   },
   {
     timestamps: true,
