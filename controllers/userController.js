@@ -104,28 +104,6 @@ export const getAllUsers = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    Get pending users (awaiting approval) (admin only)
-// @route   GET /api/admin/users/pending
-// @access  Private/Admin
-export const getPendingUsers = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-
-  const filter = { isApproved: false };
-  const total = await User.countDocuments(filter);
-  const users = await User.find(filter)
-    .select("-password")
-    .skip((page - 1) * limit)
-    .limit(Number(limit))
-    .sort({ createdAt: -1 });
-
-  res.json({
-    success: true,
-    total,
-    message: `${total} user(s) pending approval`,
-    data: users,
-  });
-});
-
 // @desc    Get pending owners (awaiting approval) (admin only)
 // @route   GET /api/admin/owners/pending
 // @access  Private/Admin
@@ -167,7 +145,6 @@ export const getUserById = asyncHandler(async (req, res) => {
 
 // @desc    Approve user login access (admin only)
 // @route   POST /api/admin/users/:id/approve
-// @route   PUT /api/admin/users/:id/approve (backward compatibility)
 // @access  Private/Admin
 export const approveUser = asyncHandler(async (req, res) => {
   const { password, email } = req.body;

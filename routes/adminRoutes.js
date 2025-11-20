@@ -2,7 +2,6 @@ import express from "express";
 import {
   getAllUsers,
   getUserById,
-  getPendingUsers,
   getPendingOwners,
   approveUser,
   revokeUser,
@@ -24,12 +23,10 @@ router.use(verifyRole(["owner", "admin"]));
 
 // User management routes
 router.get("/users", getAllUsers);
-router.get("/users/pending", getPendingUsers);
 router.get("/owners/pending", getPendingOwners);
 router.get("/users/:id", getUserById);
 // Specific routes must come before general routes
 router.post("/users/:id/approve", approveUser); // POST for owner approval with password
-router.put("/users/:id/approve", approveUser); // PUT for backward compatibility
 router.put("/users/:id/revoke", revokeUser);
 router.put("/users/:id/role", updateUserRole);
 router.put("/users/:id", updateUser); // General update endpoint
