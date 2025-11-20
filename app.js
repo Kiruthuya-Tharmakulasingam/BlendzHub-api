@@ -8,7 +8,6 @@ import adminRoutes from "./routes/adminRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import staffRoutes from "./routes/staffRoutes.js";
-import notificationRoutes from "./routes/notificationRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
@@ -16,7 +15,6 @@ import feedbackRoutes from "./routes/feedbackRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import salonRoutes from "./routes/salonRoutes.js";
-import paymentRoutes from "./routes/paymentRoutes.js";
 import slotRoutes from "./routes/slotRoutes.js";
 
 import errorHandler from "./middleware/errorhandler.js";
@@ -75,9 +73,6 @@ app.use("/api/owner", ownerRoutes);
 // Staff routes (staff only)
 app.use("/api/staff", staffRoutes);
 
-// Notification routes (authenticated users)
-app.use("/api/notifications", notificationRoutes);
-
 // Entity routes
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
@@ -86,7 +81,6 @@ app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/salons", salonRoutes);
-app.use("/api/payments", paymentRoutes);
 app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);

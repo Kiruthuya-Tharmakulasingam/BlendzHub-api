@@ -5,9 +5,6 @@ import {
   updateMySalon,
   deleteMySalon,
   getMyStaff,
-  getPendingStaff,
-  approveStaff,
-  rejectStaff,
   addStaff,
   updateStaff,
   deleteStaff,
@@ -28,10 +25,7 @@ router.delete("/salon", deleteMySalon);
 
 // Staff management
 router.get("/staff", getMyStaff);
-router.get("/staff/pending", getPendingStaff);
 router.post("/staff", addStaff);
-router.put("/staff/:id/approve", approveStaff);
-router.put("/staff/:id/reject", rejectStaff);
 router.put("/staff/:id", updateStaff);
 router.delete("/staff/:id", deleteStaff);
 

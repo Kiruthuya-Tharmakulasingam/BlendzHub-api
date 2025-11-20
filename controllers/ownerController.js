@@ -9,8 +9,10 @@ import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 // @route   GET /api/owner/salon
 // @access  Private/Owner
 export const getMySalon = asyncHandler(async (req, res) => {
-  const salon = await Salon.findOne({ ownerId: req.user._id })
-    .populate("ownerId", "name email");
+  const salon = await Salon.findOne({ ownerId: req.user._id }).populate(
+    "ownerId",
+    "name email"
+  );
 
   if (!salon) {
     throw new AppError("You don't have a salon. Please create one first.", 404);
@@ -29,7 +31,10 @@ export const createSalon = asyncHandler(async (req, res) => {
   // Check if owner already has a salon
   const existingSalon = await Salon.findOne({ ownerId: req.user._id });
   if (existingSalon) {
-    throw new AppError("You already have a salon. Use update endpoint to modify it.", 400);
+    throw new AppError(
+      "You already have a salon. Use update endpoint to modify it.",
+      400
+    );
   }
 
   const salon = await Salon.create({
@@ -73,13 +78,13 @@ export const updateMySalon = asyncHandler(async (req, res) => {
 // @access  Private/Owner
 export const deleteMySalon = asyncHandler(async (req, res) => {
   const salon = await Salon.findOne({ ownerId: req.user._id });
-  
+
   if (!salon) {
     throw new AppError("Salon not found", 404);
   }
 
   await Salon.findByIdAndDelete(salon._id);
-  
+
   // Update user's salonId
   await User.findByIdAndUpdate(req.user._id, { salonId: null });
 
@@ -118,99 +123,6 @@ export const getMyStaff = asyncHandler(async (req, res) => {
     success: true,
     total,
     data: staff,
-  });
-});
-
-// @desc    Get pending staff registrations
-// @route   GET /api/owner/staff/pending
-// @access  Private/Owner
-export const getPendingStaff = asyncHandler(async (req, res) => {
-  const salon = await Salon.findOne({ ownerId: req.user._id });
-  if (!salon) {
-    throw new AppError("You don't have a salon", 404);
-  }
-
-  const staff = await Staff.find({
-    salonId: salon._id,
-    isApprovedByOwner: false,
-  })
-    .populate("userId", "name email")
-    .sort({ createdAt: -1 });
-
-  res.json({
-    success: true,
-    total: staff.length,
-    message: `${staff.length} staff member(s) pending approval`,
-    data: staff,
-  });
-});
-
-// @desc    Approve staff member
-// @route   PUT /api/owner/staff/:id/approve
-// @access  Private/Owner
-export const approveStaff = asyncHandler(async (req, res) => {
-  const salon = await Salon.findOne({ ownerId: req.user._id });
-  if (!salon) {
-    throw new AppError("You don't have a salon", 404);
-  }
-
-  const staff = await Staff.findOne({
-    _id: req.params.id,
-    salonId: salon._id,
-  });
-
-  if (!staff) {
-    throw new AppError("Staff member not found in your salon", 404);
-  }
-
-  if (staff.isApprovedByOwner) {
-    throw new AppError("Staff member is already approved", 400);
-  }
-
-  staff.isApprovedByOwner = true;
-  staff.approvedByOwner = req.user._id;
-  staff.approvedAt = new Date();
-  await staff.save();
-
-  // Update user's staff approval status
-  await User.findByIdAndUpdate(staff.userId, {
-    staffSalonId: salon._id,
-    staffApprovedBy: req.user._id,
-    staffApprovedAt: new Date(),
-  });
-
-  res.json({
-    success: true,
-    message: "Staff member approved successfully",
-    data: staff,
-  });
-});
-
-// @desc    Reject staff member
-// @route   PUT /api/owner/staff/:id/reject
-// @access  Private/Owner
-export const rejectStaff = asyncHandler(async (req, res) => {
-  const salon = await Salon.findOne({ ownerId: req.user._id });
-  if (!salon) {
-    throw new AppError("You don't have a salon", 404);
-  }
-
-  const staff = await Staff.findOne({
-    _id: req.params.id,
-    salonId: salon._id,
-  });
-
-  if (!staff) {
-    throw new AppError("Staff member not found in your salon", 404);
-  }
-
-  // Delete staff record and user account
-  await Staff.findByIdAndDelete(staff._id);
-  await User.findByIdAndDelete(staff.userId);
-
-  res.json({
-    success: true,
-    message: "Staff member registration rejected and removed",
   });
 });
 
@@ -328,4 +240,3 @@ export const deleteStaff = asyncHandler(async (req, res) => {
     message: "Staff member deleted successfully",
   });
 });
-
