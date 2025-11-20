@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import Owner from "../models/owner.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 // @desc    Get all users (admin only)
@@ -125,6 +126,27 @@ export const getPendingUsers = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    Get pending owners (awaiting approval) (admin only)
+// @route   GET /api/admin/owners/pending
+// @access  Private/Admin
+export const getPendingOwners = asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+
+  const filter = { status: "pending" };
+  const total = await Owner.countDocuments(filter);
+  const owners = await Owner.find(filter)
+    .skip((page - 1) * limit)
+    .limit(Number(limit))
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    total,
+    message: `${total} owner(s) pending approval`,
+    data: owners,
+  });
+});
+
 // @desc    Get single user by ID (admin only)
 // @route   GET /api/admin/users/:id
 // @access  Private/Admin
@@ -144,10 +166,73 @@ export const getUserById = asyncHandler(async (req, res) => {
 });
 
 // @desc    Approve user login access (admin only)
-// @route   PUT /api/admin/users/:id/approve
+// @route   POST /api/admin/users/:id/approve
+// @route   PUT /api/admin/users/:id/approve (backward compatibility)
 // @access  Private/Admin
 export const approveUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.params.id);
+  const { password, email } = req.body;
+  const { id } = req.params;
+
+  // First check if it's an Owner record (pending owner registration)
+  const owner = await Owner.findById(id);
+
+  if (owner) {
+    // Handle owner approval
+    if (owner.status === "approved" || owner.userId) {
+      throw new AppError("Owner is already approved", 400);
+    }
+
+    if (!password) {
+      throw new AppError("Password is required for owner approval", 400);
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      throw new AppError("Password must be at least 6 characters", 400);
+    }
+    // Additional password validation: check for at least one letter and one number
+    const hasLetter = /[a-zA-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    if (!hasLetter || !hasNumber) {
+      throw new AppError(
+        "Password must contain at least one letter and one number",
+        400
+      );
+    }
+
+    // Use provided email or owner's email
+    const userEmail = email || owner.email;
+
+    // Check if user with this email already exists
+    const existingUser = await User.findOne({ email: userEmail });
+    if (existingUser) {
+      throw new AppError("User with this email already exists", 400);
+    }
+
+    // Create User record with password
+    const user = await User.create({
+      name: owner.name,
+      email: userEmail,
+      password,
+      role: "owner",
+      isApproved: true,
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+    });
+
+    // Update owner record with userId and status
+    owner.userId = user._id;
+    owner.status = "approved";
+    await owner.save();
+
+    return res.json({
+      success: true,
+      message: "Owner approved successfully. Login credentials sent.",
+    });
+  }
+
+  // Handle regular user approval (non-owner)
+  const user = await User.findById(id);
 
   if (!user) {
     throw new AppError("User not found", 404);
@@ -165,15 +250,6 @@ export const approveUser = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "User approved successfully",
-    // data: {
-    //   id: user._id,
-    //   name: user.name,
-    //   email: user.email,
-    //   role: user.role,
-    //   isApproved: user.isApproved,
-    //   approvedBy: user.approvedBy,
-    //   approvedAt: user.approvedAt,
-    // },
   });
 });
 

@@ -15,18 +15,17 @@ const router = express.Router();
 
 // All routes require owner authentication
 router.use(verifyToken);
-router.use(verifyOwner);
 
 // Salon management
-router.get("/salon", getMySalon);
-router.post("/salon", createSalon);
-router.put("/salon", updateMySalon);
-router.delete("/salon", deleteMySalon);
+router.get("/salon", verifyOwner(), getMySalon); // Requires salon to exist
+router.post("/salon", verifyOwner(true), createSalon); // Allows creation (no salon required)
+router.put("/salon", verifyOwner(), updateMySalon); // Requires salon to exist
+router.delete("/salon", verifyOwner(), deleteMySalon); // Requires salon to exist
 
-// Staff management
-router.get("/staff", getMyStaff);
-router.post("/staff", addStaff);
-router.put("/staff/:id", updateStaff);
-router.delete("/staff/:id", deleteStaff);
+// Staff management (all require salon to exist)
+router.get("/staff", verifyOwner(), getMyStaff);
+router.post("/staff", verifyOwner(), addStaff);
+router.put("/staff/:id", verifyOwner(), updateStaff);
+router.delete("/staff/:id", verifyOwner(), deleteStaff);
 
 export default router;

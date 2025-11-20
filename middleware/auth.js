@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import Staff from "../models/staff.js";
+import Owner from "../models/owner.js";
 import Salon from "../models/salon.js";
 import { AppError, asyncHandler } from "./errorhandler.js";
 
@@ -70,8 +71,33 @@ export const protect = asyncHandler(async (req, res, next) => {
         req.user.isApproved = true;
         await req.user.save();
       }
+    } else if (req.user.role === "owner") {
+      // For owners: check Owner record status and userId
+      const owner = await Owner.findOne({ userId: req.user._id });
+      if (!owner) {
+        return next(
+          new AppError(
+            "Owner profile not found. Please contact admin.",
+            404
+          )
+        );
+      }
+      // Owners can only access if status is "approved" and userId exists
+      if (owner.status !== "approved" || !owner.userId) {
+        return next(
+          new AppError(
+            "Your account is pending admin approval. Please wait for approval to access this route.",
+            403
+          )
+        );
+      }
+      // Attach salon info if exists
+      const salon = await Salon.findOne({ ownerId: req.user._id });
+      if (salon) {
+        req.salon = salon;
+      }
     } else if (!req.user.isApproved) {
-      // For owners and other roles, require admin approval
+      // For other roles, require admin approval
       return next(
         new AppError(
           "Your account is pending admin approval. Please wait for approval to access this route.",
@@ -93,14 +119,6 @@ export const protect = asyncHandler(async (req, res, next) => {
       }
       // Attach staff info to request
       req.staff = staff;
-    }
-
-    // For owners: attach salon info
-    if (req.user.role === "owner") {
-      const salon = await Salon.findOne({ ownerId: req.user._id });
-      if (salon) {
-        req.salon = salon;
-      }
     }
 
     next();
@@ -152,21 +170,30 @@ export const blacklistToken = (token) => {
 };
 
 // Owner authorization - can only manage their own salon
-export const verifyOwner = asyncHandler(async (req, res, next) => {
-  if (req.user.role !== "owner") {
-    return next(new AppError("Only salon owners can access this route", 403));
-  }
+// allowCreate: if true, allows access even if salon doesn't exist (for creation routes)
+export const verifyOwner = (allowCreate = false) => {
+  return asyncHandler(async (req, res, next) => {
+    if (req.user.role !== "owner") {
+      return next(new AppError("Only salon owners can access this route", 403));
+    }
 
-  const salon = await Salon.findOne({ ownerId: req.user._id });
-  if (!salon) {
-    return next(
-      new AppError("You don't have a salon associated with your account", 404)
-    );
-  }
+    const salon = await Salon.findOne({ ownerId: req.user._id });
+    
+    // If allowCreate is true and no salon exists, allow access (for creation)
+    if (!salon && !allowCreate) {
+      return next(
+        new AppError("You don't have a salon associated with your account", 404)
+      );
+    }
 
-  req.salon = salon;
-  next();
-});
+    // Attach salon if it exists
+    if (salon) {
+      req.salon = salon;
+    }
+    
+    next();
+  });
+};
 
 // Staff authorization - can only manage their own data
 export const verifyStaff = asyncHandler(async (req, res, next) => {

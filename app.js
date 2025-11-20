@@ -3,6 +3,13 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
+// Import models to ensure they're registered with Mongoose
+import "./models/user.js";
+import "./models/owner.js";
+import "./models/staff.js";
+import "./models/customer.js";
+import "./models/salon.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
@@ -26,7 +33,7 @@ const PORT = process.env.PORT;
 app.use(cors());
 app.use(express.json());
 
-connectDB();
+// Database connection will be established in startServer()
 
 app.get("/", (req, res) => {
   res.json({
@@ -85,6 +92,17 @@ app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Start server after database connection is established
+const startServer = async () => {
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
