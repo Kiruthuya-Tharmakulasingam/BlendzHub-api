@@ -6,21 +6,15 @@ import {
   updateFeedback,
   deleteFeedback,
 } from "../controllers/feedbackController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Read: any authenticated user/customer
-router.get("/", verifyToken, getAllFeedbacks);
-router.get("/:id", verifyToken, getFeedbackById);
+router.get("/", authenticate, getAllFeedbacks);
+router.get("/:id", authenticate, getFeedbackById);
 
-// Create: customers can post feedback
-router.post("/", verifyToken, verifyRole(["customer"]), createFeedback);
-
-// Update: customer can moderate
-router.put("/:id", verifyToken, verifyRole(["customer"]), updateFeedback);
-
-// Delete: admin can remove inappropriate content
-router.delete("/:id", verifyToken, verifyRole(["admin"]), deleteFeedback);
+router.post("/", authenticate, requireRole("customer"), createFeedback);
+router.put("/:id", authenticate, requireRole("customer"), updateFeedback);
+router.delete("/:id", authenticate, requireRole("admin"), deleteFeedback);
 
 export default router;

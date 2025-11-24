@@ -6,21 +6,19 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controllers/productController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { authOptional, authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes - anyone can view products
-router.get("/", getAllProducts);
-router.get("/:id", getProductById);
+router.get("/", authOptional, getAllProducts);
+router.get("/:id", authOptional, getProductById);
 
-// Protected routes - owner/staff can create/update/delete products
-router.post("/", verifyToken, verifyRole(["owner", "staff"]), createProduct);
-router.put("/:id", verifyToken, verifyRole(["owner", "staff"]), updateProduct);
+router.post("/", authenticate, requireRole(["owner", "staff"]), createProduct);
+router.put("/:id", authenticate, requireRole(["owner", "staff"]), updateProduct);
 router.delete(
   "/:id",
-  verifyToken,
-  verifyRole(["owner", "staff"]),
+  authenticate,
+  requireRole(["owner", "staff"]),
   deleteProduct
 );
 

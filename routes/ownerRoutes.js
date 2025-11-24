@@ -8,24 +8,33 @@ import {
   addStaff,
   updateStaff,
   deleteStaff,
+  approveOwner,
+  rejectOwner,
+  listOwners,
+  listPendingOwners,
 } from "../controllers/ownerController.js";
-import { verifyToken, verifyOwner } from "../middleware/auth.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// All routes require owner authentication
-router.use(verifyToken);
+// Admin routes for owner management
+router.get("/", authenticate, requireRole("admin"), listOwners);
+router.get("/pending", authenticate, requireRole("admin"), listPendingOwners);
+router.patch("/:id/approve", authenticate, requireRole("admin"), approveOwner);
+router.patch("/:id/reject", authenticate, requireRole("admin"), rejectOwner);
 
-// Salon management
-router.get("/salon", verifyOwner(), getMySalon); // Requires salon to exist
-router.post("/salon", verifyOwner(true), createSalon); // Allows creation (no salon required)
-router.put("/salon", verifyOwner(), updateMySalon); // Requires salon to exist
-router.delete("/salon", verifyOwner(), deleteMySalon); // Requires salon to exist
+// Owner self-service routes
+router.use(authenticate);
+router.use(requireRole("owner"));
 
-// Staff management (all require salon to exist)
-router.get("/staff", verifyOwner(), getMyStaff);
-router.post("/staff", verifyOwner(), addStaff);
-router.put("/staff/:id", verifyOwner(), updateStaff);
-router.delete("/staff/:id", verifyOwner(), deleteStaff);
+router.get("/salon", getMySalon);
+router.post("/salon", createSalon);
+router.put("/salon", updateMySalon);
+router.delete("/salon", deleteMySalon);
+
+router.get("/staff", getMyStaff);
+router.post("/staff", addStaff);
+router.put("/staff/:id", updateStaff);
+router.delete("/staff/:id", deleteStaff);
 
 export default router;

@@ -1,66 +1,39 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const emailRegex =
+  /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Please provide a name"],
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Please provide an email"],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        "Please provide a valid email",
-      ],
+      match: [emailRegex, "Please provide a valid email"],
     },
     password: {
       type: String,
-      required: [true, "Please provide a password"],
+      required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, // Don't return password by default
+      select: false,
     },
     role: {
       type: String,
-      enum: ["owner", "admin", "staff", "user", "customer"],
-      default: "user",
+      enum: ["customer", "owner", "admin", "staff"],
+      required: true,
     },
-    isApproved: {
+    isActive: {
       type: Boolean,
-      default: false,
+      default: true,
     },
-    approvedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-    },
-    approvedAt: {
-      type: Date,
-      default: null,
-    },
-    // For owners: link to their salon
-    salonId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Salon",
-      default: null,
-    },
-    // For staff: link to their salon and owner who approved them
-    staffSalonId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Salon",
-      default: null,
-    },
-    staffApprovedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // Owner who approved the staff
-      default: null,
-    },
-    staffApprovedAt: {
+    lastLoginAt: {
       type: Date,
       default: null,
     },
@@ -70,19 +43,18 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Hash password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) {
     return next();
   }
+
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
 });
 
-// Method to compare password
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
+userSchema.methods.comparePassword = function (candidatePassword) {
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
 export default mongoose.model("User", userSchema);

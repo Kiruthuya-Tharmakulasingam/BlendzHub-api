@@ -6,26 +6,24 @@ import {
   updateEquipment,
   deleteEquipment,
 } from "../controllers/equipmentController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { authOptional, authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes - anyone can view equipment
-router.get("/", getAllEquipments);
-router.get("/:id", getEquipmentById);
+router.get("/", authOptional, getAllEquipments);
+router.get("/:id", authOptional, getEquipmentById);
 
-// Protected routes - owner/staff can create/update/delete equipment
-router.post("/", verifyToken, verifyRole(["owner", "staff"]), createEquipment);
+router.post("/", authenticate, requireRole(["owner", "staff"]), createEquipment);
 router.put(
   "/:id",
-  verifyToken,
-  verifyRole(["owner", "staff"]),
+  authenticate,
+  requireRole(["owner", "staff"]),
   updateEquipment
 );
 router.delete(
   "/:id",
-  verifyToken,
-  verifyRole(["owner", "staff"]),
+  authenticate,
+  requireRole(["owner", "staff"]),
   deleteEquipment
 );
 

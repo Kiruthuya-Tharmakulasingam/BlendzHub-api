@@ -6,17 +6,15 @@ import {
   updateSalon,
   deleteSalon,
 } from "../controllers/salonController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { authOptional, authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes - anyone can view salons
-router.get("/", getAllSalons);
-router.get("/:id", getSalonById);
+router.get("/", authOptional, getAllSalons);
+router.get("/:id", authOptional, getSalonById);
 
-// Protected routes - only owner can create/update/delete salons
-router.post("/", verifyToken, verifyRole(["owner"]), createSalon);
-router.put("/:id", verifyToken, verifyRole(["owner"]), updateSalon);
-router.delete("/:id", verifyToken, verifyRole(["owner"]), deleteSalon);
+router.post("/", authenticate, requireRole("owner"), createSalon);
+router.put("/:id", authenticate, requireRole("owner"), updateSalon);
+router.delete("/:id", authenticate, requireRole("owner"), deleteSalon);
 
 export default router;

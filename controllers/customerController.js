@@ -27,13 +27,8 @@ export const getAllCustomers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Contact number filtering (exact match or partial)
   if (contact) {
-    const contactNum = Number(contact);
-    if (!isNaN(contactNum)) {
-      // Convert contact to string for partial matching
-      filter.contact = contactNum;
-    }
+    filter.contact = new RegExp(contact.trim(), "i");
   }
 
   // Date range filtering
@@ -50,33 +45,18 @@ export const getAllCustomers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Text search across name, email, and contact
   if (search) {
     const searchRegex = new RegExp(search, "i");
-    const searchNum = Number(search);
-    
-    // Build search conditions
     const searchConditions = [
       { name: searchRegex },
       { email: searchRegex },
+      { contact: searchRegex },
     ];
 
-    // If search is a number, also search in contact
-    if (!isNaN(searchNum)) {
-      searchConditions.push({ contact: searchNum });
-    }
-
-    // Combine search with existing filters
-    // If there are other filters, use $and to combine them
     if (Object.keys(filter).length > 0) {
-      // Create a new filter object with $and
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { $or: searchConditions },
-        ],
+        $and: [{ ...filter }, { $or: searchConditions }],
       };
-      // Replace filter with combined filter
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
     } else {
@@ -84,8 +64,14 @@ export const getAllCustomers = asyncHandler(async (req, res) => {
     }
   }
 
-  // Validate sortBy field
-  const allowedSortFields = ["name", "email", "contact", "status", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "name",
+    "email",
+    "contact",
+    "status",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
   const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
   const sort = { [sortField]: sortDirection };
@@ -122,20 +108,69 @@ export const getCustomerById = asyncHandler(async (req, res) => {
 });
 
 export const createCustomer = asyncHandler(async (req, res) => {
-  const customer = await Customer.create(req.body);
+  const { name, contact, status } = req.body;
+
+  const existing = await Customer.findOne({ userId: req.user._id });
+  if (existing) {
+    throw new AppError("Customer profile already exists.", 400);
+  }
+
+  if (!contact) {
+    throw new AppError("Contact number is required.", 400);
+  }
+
+  const resolvedName = name || req.user.name;
+  if (!resolvedName) {
+    throw new AppError("Name is required.", 400);
+  }
+
+  const customer = await Customer.create({
+    userId: req.user._id,
+    name: resolvedName,
+    email: req.user.email,
+    contact: String(contact).trim(),
+    status: status || "active",
+  });
+
   res.status(201).json({ success: true, data: customer });
 });
 
 export const updateCustomer = asyncHandler(async (req, res) => {
-  const customer = await Customer.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
+  const customer = await Customer.findById(req.params.id);
   if (!customer) throw new AppError("Customer not found", 404);
+
+  if (!customer.userId.equals(req.user._id)) {
+    throw new AppError("You can only update your own profile.", 403);
+  }
+
+  if (req.body.name !== undefined) {
+    customer.name = req.body.name;
+  }
+  if (req.body.contact !== undefined) {
+    const normalizedContact = String(req.body.contact).trim();
+    if (!normalizedContact) {
+      throw new AppError("Contact number cannot be empty.", 400);
+    }
+    customer.contact = normalizedContact;
+  }
+  if (req.body.status !== undefined) {
+    customer.status = req.body.status;
+  }
+
+  await customer.save();
+
   res.json({ success: true, data: customer });
 });
 
 export const deleteCustomer = asyncHandler(async (req, res) => {
-  const customer = await Customer.findByIdAndDelete(req.params.id);
+  const customer = await Customer.findById(req.params.id);
   if (!customer) throw new AppError("Customer not found", 404);
+
+  if (!customer.userId.equals(req.user._id)) {
+    throw new AppError("You can only delete your own profile.", 403);
+  }
+
+  await customer.deleteOne();
+
   res.json({ success: true, message: "Customer deleted successfully" });
 });

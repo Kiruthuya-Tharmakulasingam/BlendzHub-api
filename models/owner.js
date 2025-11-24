@@ -2,39 +2,44 @@ import mongoose from "mongoose";
 
 const ownerSchema = new mongoose.Schema(
   {
-    // Link to User account (created after admin approval)
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      default: null,
+      required: true,
+      unique: true,
     },
     name: {
       type: String,
-      required: [true, "Please provide a name"],
+      required: [true, "Name is required"],
       trim: true,
     },
     email: {
       type: String,
-      required: [true, "Please provide an email"],
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      match: [
-        /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
-        "Please provide a valid email",
-      ],
     },
     status: {
       type: String,
-      enum: ["pending", "approved"],
+      enum: ["pending", "approved", "rejected", "suspended"],
       default: "pending",
     },
-    // Additional owner-specific fields can be added here
     phone: {
       type: String,
+      trim: true,
     },
     businessName: {
       type: String,
+      trim: true,
+    },
+    reason: {
+      type: String,
+      trim: true,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
     },
   },
   {

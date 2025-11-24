@@ -6,22 +6,25 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "../controllers/customerController.js";
-import { verifyToken, verifyRole } from "../middleware/auth.js";
+import { authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Protected routes - only owner/staff can view customers
-router.get("/", verifyToken, verifyRole(["owner", "staff"]), getAllCustomers);
+router.get(
+  "/",
+  authenticate,
+  requireRole(["owner", "staff", "admin"]),
+  getAllCustomers
+);
 router.get(
   "/:id",
-  verifyToken,
-  verifyRole(["owner", "staff"]),
+  authenticate,
+  requireRole(["owner", "staff", "admin"]),
   getCustomerById
 );
 
-// Protected routes - only customer can create/update/delete customers
-router.post("/", verifyToken, verifyRole(["customer"]), createCustomer);
-router.put("/:id", verifyToken, verifyRole(["customer"]), updateCustomer);
-router.delete("/:id", verifyToken, verifyRole(["customer"]), deleteCustomer);
+router.post("/", authenticate, requireRole("customer"), createCustomer);
+router.put("/:id", authenticate, requireRole("customer"), updateCustomer);
+router.delete("/:id", authenticate, requireRole("customer"), deleteCustomer);
 
 export default router;

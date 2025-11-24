@@ -71,11 +71,11 @@ app.use("/api/auth", authRoutes);
 // Profile routes (authenticated users)
 app.use("/api/profile", profileRoutes);
 
-// Admin routes (admin/owner only)
+// Admin routes (admin only)
 app.use("/api/admin", adminRoutes);
 
-// Owner routes (owner only)
-app.use("/api/owner", ownerRoutes);
+// Owner routes (entity-based)
+app.use("/api/owners", ownerRoutes);
 
 // Staff routes (staff only)
 app.use("/api/staff", staffRoutes);
