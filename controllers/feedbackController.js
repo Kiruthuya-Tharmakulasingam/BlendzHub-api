@@ -10,7 +10,6 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
     minRating,
     maxRating,
     salonId,
-    staffId,
     customerId,
     appointmentId,
     search,
@@ -25,8 +24,6 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
   // Role-based filtering
   if (req.user.role === "owner" && req.salon) {
     filter.salonId = req.salon._id;
-  } else if (req.user.role === "staff" && req.staff) {
-    filter.staffId = req.staff._id;
   }
 
   // Rating filtering
@@ -42,7 +39,6 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
 
   // ID-based filtering
   if (salonId) filter.salonId = salonId;
-  if (staffId) filter.staffId = staffId;
   if (customerId) filter.customerId = customerId;
   if (appointmentId) filter.appointmentId = appointmentId;
 
@@ -64,10 +60,7 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
     const searchRegex = new RegExp(search, "i");
     if (Object.keys(filter).length > 0) {
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { comments: searchRegex },
-        ],
+        $and: [{ ...filter }, { comments: searchRegex }],
       };
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
@@ -95,12 +88,11 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
   const feedbacks = await Feedback.find(filter)
     .populate("customerId", "name email")
     .populate("salonId", "name location")
-    .populate("staffId", "name role")
     .populate("appointmentId")
     .sort(sort)
     .skip(skip)
     .limit(limitNum);
-  
+
   res.json({
     success: true,
     total,
@@ -117,14 +109,10 @@ export const getFeedbackById = asyncHandler(async (req, res) => {
   // Role-based access
   if (req.user.role === "owner" && req.salon) {
     filter.salonId = req.salon._id;
-  } else if (req.user.role === "staff" && req.staff) {
-    filter.staffId = req.staff._id;
   }
-
   const feedback = await Feedback.findOne(filter)
     .populate("customerId", "name email")
     .populate("salonId", "name location")
-    .populate("staffId", "name role")
     .populate("appointmentId");
 
   if (!feedback) {
@@ -136,7 +124,7 @@ export const getFeedbackById = asyncHandler(async (req, res) => {
 
 // Create feedback (customer can leave feedback after completed appointment)
 export const createFeedback = asyncHandler(async (req, res) => {
-  const { appointmentId, salonId, staffId, rating, comments } = req.body;
+  const { appointmentId, salonId, rating, comments } = req.body;
 
   if (!rating || !salonId) {
     throw new AppError("Please provide rating and salonId", 400);
@@ -152,14 +140,16 @@ export const createFeedback = asyncHandler(async (req, res) => {
       throw new AppError("This appointment does not belong to you", 403);
     }
     if (appointment.status !== "completed") {
-      throw new AppError("Feedback can only be given for completed appointments", 400);
+      throw new AppError(
+        "Feedback can only be given for completed appointments",
+        400
+      );
     }
   }
 
   const feedback = await Feedback.create({
     customerId: req.user._id,
     salonId,
-    staffId: staffId || null,
     appointmentId: appointmentId || null,
     rating,
     comments: comments || null,
@@ -168,7 +158,6 @@ export const createFeedback = asyncHandler(async (req, res) => {
   const populatedFeedback = await Feedback.findById(feedback._id)
     .populate("customerId", "name email")
     .populate("salonId", "name location")
-    .populate("staffId", "name role")
     .populate("appointmentId");
 
   res.status(201).json({

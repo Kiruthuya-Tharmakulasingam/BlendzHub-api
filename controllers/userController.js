@@ -79,7 +79,7 @@ export const getUserById = asyncHandler(async (req, res) => {
 
 export const updateUserRole = asyncHandler(async (req, res) => {
   const { role } = req.body;
-  const allowedRoles = ["customer", "owner", "admin", "staff"];
+  const allowedRoles = ["customer", "owner", "admin"];
 
   if (!allowedRoles.includes(role)) {
     throw new AppError("Invalid role provided.", 400);
@@ -117,7 +117,7 @@ export const updateUser = asyncHandler(async (req, res) => {
   }
 
   if (updates.role) {
-    const allowedRoles = ["customer", "owner", "admin", "staff"];
+    const allowedRoles = ["customer", "owner", "admin"];
     if (!allowedRoles.includes(updates.role)) {
       throw new AppError("Invalid role provided.", 400);
     }

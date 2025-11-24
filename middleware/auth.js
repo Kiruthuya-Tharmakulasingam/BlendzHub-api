@@ -2,7 +2,6 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import Owner from "../models/owner.js";
 import Customer from "../models/customer.js";
-import Staff from "../models/staff.js";
 import Salon from "../models/salon.js";
 import { AppError, asyncHandler } from "./errorhandler.js";
 
@@ -37,10 +36,7 @@ const attachRoleContext = async (req) => {
       );
     }
     if (ownerProfile.status !== "approved") {
-      throw new AppError(
-        "Your owner account is not approved yet.",
-        403
-      );
+      throw new AppError("Your owner account is not approved yet.", 403);
     }
     req.ownerProfile = ownerProfile;
 
@@ -61,17 +57,6 @@ const attachRoleContext = async (req) => {
       );
     }
     req.customerProfile = customerProfile;
-  }
-
-  if (req.user.role === "staff") {
-    const staffProfile = await Staff.findOne({ userId: req.user._id });
-    if (!staffProfile) {
-      throw new AppError(
-        "Staff profile not found. Please contact your owner.",
-        404
-      );
-    }
-    req.staff = staffProfile;
   }
 };
 

@@ -6,7 +6,6 @@ import connectDB from "./config/db.js";
 // Import models to ensure they're registered with Mongoose
 import "./models/user.js";
 import "./models/owner.js";
-import "./models/staff.js";
 import "./models/customer.js";
 import "./models/salon.js";
 
@@ -14,7 +13,6 @@ import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
-import staffRoutes from "./routes/staffRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
@@ -76,9 +74,6 @@ app.use("/api/admin", adminRoutes);
 
 // Owner routes (entity-based)
 app.use("/api/owners", ownerRoutes);
-
-// Staff routes (staff only)
-app.use("/api/staff", staffRoutes);
 
 // Entity routes
 app.use("/api/customers", customerRoutes);

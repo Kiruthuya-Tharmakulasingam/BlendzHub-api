@@ -2,34 +2,29 @@ import mongoose from "mongoose";
 
 const feedbackSchema = new mongoose.Schema(
   {
-    customerId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true 
+      required: true,
     },
-    staffId: { 
-      type: mongoose.Schema.Types.ObjectId, 
-      ref: "Staff",
-      default: null 
-    },
-    salonId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+    salonId: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Salon",
-      required: true 
+      required: true,
     },
     appointmentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Appointment",
       default: null,
     },
-    comments: { 
-      type: String 
+    comments: {
+      type: String,
     },
-    rating: { 
-      type: Number, 
-      min: 1, 
+    rating: {
+      type: Number,
+      min: 1,
       max: 5,
-      required: true 
+      required: true,
     },
   },
   { timestamps: true }

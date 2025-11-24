@@ -5,19 +5,14 @@ import mongoose from "mongoose";
 
 export const getAvailableSlots = async (req, res) => {
   try {
-    const { date, staffId, serviceId } = req.query;
+    const { date, serviceId } = req.query;
 
-    if (!date || !staffId || !serviceId) {
-      return res
-        .status(400)
-        .json({ message: "date, staffId & serviceId required" });
+    if (!date || !serviceId) {
+      return res.status(400).json({ message: "date, serviceId required" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(serviceId)) {
       return res.status(400).json({ message: "Invalid serviceId" });
-    }
-    if (!mongoose.Types.ObjectId.isValid(staffId)) {
-      return res.status(400).json({ message: "Invalid staffId" });
     }
 
     const service = await Service.findById(serviceId);
@@ -38,7 +33,7 @@ export const getAvailableSlots = async (req, res) => {
 
     const allSlots = generateTimeSlots(opening, closing, interval);
 
-    const booked = await Appointment.find({ date, staffId });
+    const booked = await Appointment.find({ date });
 
     const bookedTimes = booked.map((b) => {
       const t = new Date(b.time);

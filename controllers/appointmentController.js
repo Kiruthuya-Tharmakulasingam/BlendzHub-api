@@ -1,6 +1,5 @@
 import Appointment from "../models/appointment.js";
 import Service from "../models/service.js";
-import Staff from "../models/staff.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 // -----------------------------
@@ -27,8 +26,6 @@ export const getAllAppointments = asyncHandler(async (req, res) => {
 
   // Role-based filter
   if (req.user.role === "customer") filter.customerId = req.user._id;
-  else if (req.user.role === "staff" && req.staff)
-    filter.staffId = req.staff._id;
   else if (req.user.role === "owner" && req.salon)
     filter.salonId = req.salon._id;
 
@@ -40,7 +37,6 @@ export const getAllAppointments = asyncHandler(async (req, res) => {
 
   if (salonId) filter.salonId = salonId;
   if (serviceId) filter.serviceId = serviceId;
-  if (staffId) filter.staffId = staffId;
   if (customerId && req.user.role !== "customer")
     filter.customerId = customerId;
 
@@ -86,7 +82,6 @@ export const getAllAppointments = asyncHandler(async (req, res) => {
     .populate("customerId", "name email")
     .populate("serviceId", "name price")
     .populate("salonId", "name location")
-    .populate("staffId", "name role")
     .sort(sort)
     .skip(skip)
     .limit(limitNum);
@@ -107,16 +102,13 @@ export const getAppointmentById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id };
 
   if (req.user.role === "customer") filter.customerId = req.user._id;
-  else if (req.user.role === "staff" && req.staff)
-    filter.staffId = req.staff._id;
   else if (req.user.role === "owner" && req.salon)
     filter.salonId = req.salon._id;
 
   const appointment = await Appointment.findOne(filter)
     .populate("customerId", "name email")
     .populate("serviceId", "name price")
-    .populate("salonId", "name location")
-    .populate("staffId", "name role specializations");
+    .populate("salonId", "name location");
 
   if (!appointment) throw new AppError("Appointment not found", 404);
 
@@ -155,18 +147,7 @@ export const createAppointment = asyncHandler(async (req, res) => {
 
   const covers = allSlots.slice(startIndex, startIndex + blocksNeeded);
 
-  const availableStaff = await Staff.findOne({
-    salonId,
-    specializations: serviceId,
-  });
-  if (!availableStaff)
-    throw new AppError(
-      "No staff member available for this service at this salon. Please choose another time.",
-      404
-    );
-
   const conflict = await Appointment.findOne({
-    staffId: availableStaff._id,
     date,
     time: { $in: covers },
     status: { $in: ["pending", "accepted", "in-progress"] }, // ignore completed/cancelled/no-show
@@ -183,7 +164,6 @@ export const createAppointment = asyncHandler(async (req, res) => {
     customerId: req.user._id,
     salonId,
     serviceId,
-    staffId: availableStaff._id,
     date,
     time,
     amount,
@@ -193,8 +173,7 @@ export const createAppointment = asyncHandler(async (req, res) => {
   const populatedAppointment = await Appointment.findById(appointment._id)
     .populate("customerId", "name email")
     .populate("serviceId", "name price")
-    .populate("salonId", "name location")
-    .populate("staffId", "name role");
+    .populate("salonId", "name location");
 
   res.status(201).json({
     success: true,

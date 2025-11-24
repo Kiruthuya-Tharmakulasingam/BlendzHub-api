@@ -8,7 +8,6 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     limit = 10,
     supplier,
     salonId,
-    assignedToStaffId,
     search,
     minQualityRating,
     maxQualityRating,
@@ -25,9 +24,6 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   if (req.user) {
     if (req.user.role === "owner" && req.salon) {
       filter.salonId = req.salon._id;
-    } else if (req.user.role === "staff" && req.staff) {
-      filter.salonId = req.staff.salonId;
-      // Staff can see all products in their salon, not just assigned ones
     }
   }
 
@@ -38,7 +34,6 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
   // ID-based filtering
   if (salonId) filter.salonId = salonId;
-  if (assignedToStaffId) filter.assignedToStaffId = assignedToStaffId;
 
   // Quality rating filtering
   if (qualityRating) {
@@ -46,8 +41,10 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   } else {
     if (minQualityRating || maxQualityRating) {
       filter.qualityRating = {};
-      if (minQualityRating) filter.qualityRating.$gte = Number(minQualityRating);
-      if (maxQualityRating) filter.qualityRating.$lte = Number(maxQualityRating);
+      if (minQualityRating)
+        filter.qualityRating.$gte = Number(minQualityRating);
+      if (maxQualityRating)
+        filter.qualityRating.$lte = Number(maxQualityRating);
     }
   }
 
@@ -67,17 +64,11 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   // Text search in name and supplier
   if (search) {
     const searchRegex = new RegExp(search, "i");
-    const searchConditions = [
-      { name: searchRegex },
-      { supplier: searchRegex },
-    ];
+    const searchConditions = [{ name: searchRegex }, { supplier: searchRegex }];
 
     if (Object.keys(filter).length > 0) {
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { $or: searchConditions },
-        ],
+        $and: [{ ...filter }, { $or: searchConditions }],
       };
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
@@ -87,7 +78,13 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   }
 
   // Validate sortBy field
-  const allowedSortFields = ["name", "supplier", "qualityRating", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "name",
+    "supplier",
+    "qualityRating",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
   const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
   const sort = { [sortField]: sortDirection };
@@ -104,11 +101,10 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   // Fetch products with filters, sorting, and pagination
   const products = await Product.find(filter)
     .populate("salonId", "name location")
-    .populate("assignedToStaffId", "name role")
     .sort(sort)
     .skip(skip)
     .limit(limitNum);
-  
+
   res.json({
     success: true,
     total,
@@ -126,14 +122,13 @@ export const getProductById = asyncHandler(async (req, res) => {
   if (req.user) {
     if (req.user.role === "owner" && req.salon) {
       filter.salonId = req.salon._id;
-    } else if (req.user.role === "staff" && req.staff) {
-      filter.salonId = req.staff.salonId;
     }
   }
 
-  const product = await Product.findOne(filter)
-    .populate("salonId", "name location")
-    .populate("assignedToStaffId", "name role");
+  const product = await Product.findOne(filter).populate(
+    "salonId",
+    "name location"
+  );
 
   if (!product) {
     throw new AppError("Product not found", 404);
@@ -162,7 +157,10 @@ export const createProduct = asyncHandler(async (req, res) => {
   }
 
   // Verify owner owns this salon (if owner role)
-  if (req.user.role === "owner" && salon.ownerId.toString() !== req.user._id.toString()) {
+  if (
+    req.user.role === "owner" &&
+    salon.ownerId.toString() !== req.user._id.toString()
+  ) {
     throw new AppError("You can only create products for your own salon", 403);
   }
 
@@ -171,9 +169,10 @@ export const createProduct = asyncHandler(async (req, res) => {
     salonId,
   });
 
-  const populatedProduct = await Product.findById(product._id)
-    .populate("salonId", "name location")
-    .populate("assignedToStaffId", "name role");
+  const populatedProduct = await Product.findById(product._id).populate(
+    "salonId",
+    "name location"
+  );
 
   res.status(201).json({
     success: true,

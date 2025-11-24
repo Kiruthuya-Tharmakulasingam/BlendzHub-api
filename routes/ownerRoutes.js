@@ -4,10 +4,6 @@ import {
   createSalon,
   updateMySalon,
   deleteMySalon,
-  getMyStaff,
-  addStaff,
-  updateStaff,
-  deleteStaff,
   approveOwner,
   rejectOwner,
   listOwners,
@@ -31,10 +27,5 @@ router.get("/salon", getMySalon);
 router.post("/salon", createSalon);
 router.put("/salon", updateMySalon);
 router.delete("/salon", deleteMySalon);
-
-router.get("/staff", getMyStaff);
-router.post("/staff", addStaff);
-router.put("/staff/:id", updateStaff);
-router.delete("/staff/:id", deleteStaff);
 
 export default router;

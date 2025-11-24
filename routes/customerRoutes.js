@@ -10,16 +10,11 @@ import { authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get(
-  "/",
-  authenticate,
-  requireRole(["owner", "staff", "admin"]),
-  getAllCustomers
-);
+router.get("/", authenticate, requireRole(["owner", "admin"]), getAllCustomers);
 router.get(
   "/:id",
   authenticate,
-  requireRole(["owner", "staff", "admin"]),
+  requireRole(["owner", "admin"]),
   getCustomerById
 );
 

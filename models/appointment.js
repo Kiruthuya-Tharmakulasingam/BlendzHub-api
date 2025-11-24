@@ -38,11 +38,6 @@ const appointmentSchema = new mongoose.Schema(
       ref: "Service",
       required: true,
     },
-    staffId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Staff",
-      required: true,
-    },
     // Pricing
     amount: {
       type: Number,

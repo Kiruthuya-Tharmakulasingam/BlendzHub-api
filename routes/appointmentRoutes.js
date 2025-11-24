@@ -16,25 +16,10 @@ router.get("/:id", authenticate, getAppointmentById);
 
 router.post("/", authenticate, requireRole("customer"), createAppointment);
 
-router.put(
-  "/:id",
-  authenticate,
-  requireRole(["owner", "staff"]),
-  updateAppointment
-);
+router.put("/:id", authenticate, requireRole(["owner"]), updateAppointment);
 
-router.patch(
-  "/:id/no-show",
-  authenticate,
-  requireRole(["owner", "staff"]),
-  markNoShow
-);
+router.patch("/:id/no-show", authenticate, requireRole(["owner"]), markNoShow);
 
-router.delete(
-  "/:id",
-  authenticate,
-  requireRole(["owner", "staff"]),
-  deleteAppointment
-);
+router.delete("/:id", authenticate, requireRole(["owner"]), deleteAppointment);
 
 export default router;

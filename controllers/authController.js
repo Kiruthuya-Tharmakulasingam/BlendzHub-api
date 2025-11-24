@@ -1,7 +1,6 @@
 import User from "../models/user.js";
 import Customer from "../models/customer.js";
 import Owner from "../models/owner.js";
-import Staff from "../models/staff.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 import { generateToken } from "../utils/generateToken.js";
 import { blacklistToken } from "../middleware/auth.js";
@@ -136,23 +135,16 @@ export const login = asyncHandler(async (req, res) => {
   }
 
   if (!user.isActive) {
-    throw new AppError(
-      "Your account is disabled or pending approval.",
-      403
-    );
+    throw new AppError("Your account is disabled or pending approval.", 403);
   }
 
   let ownerProfile = null;
   let customerProfile = null;
-  let staffProfile = null;
 
   if (user.role === "owner") {
     ownerProfile = await Owner.findOne({ userId: user._id });
     if (!ownerProfile || ownerProfile.status !== "approved") {
-      throw new AppError(
-        "Your owner account has not been approved yet.",
-        403
-      );
+      throw new AppError("Your owner account has not been approved yet.", 403);
     }
   }
 
@@ -162,18 +154,6 @@ export const login = asyncHandler(async (req, res) => {
       throw new AppError(
         "Customer profile not found. Please contact support.",
         400
-      );
-    }
-  }
-
-  if (user.role === "staff") {
-    staffProfile = await Staff.findOne({ userId: user._id })
-      .populate("salonId", "name location")
-      .populate("specializations", "name price");
-    if (!staffProfile) {
-      throw new AppError(
-        "Staff profile not found. Please contact your salon owner.",
-        404
       );
     }
   }
@@ -196,7 +176,6 @@ export const login = asyncHandler(async (req, res) => {
       },
       owner: ownerProfile || undefined,
       customer: customerProfile || undefined,
-      staff: staffProfile || undefined,
     },
   });
 });
@@ -212,10 +191,6 @@ export const getMe = asyncHandler(async (req, res) => {
 
   if (req.user.role === "customer" && req.customerProfile) {
     response.customer = req.customerProfile;
-  }
-
-  if (req.user.role === "staff" && req.staff) {
-    response.staff = req.staff;
   }
 
   res.json({
