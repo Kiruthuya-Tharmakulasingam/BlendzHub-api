@@ -22,22 +22,20 @@ const ownerSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "suspended"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    phone: {
+    password: {
       type: String,
+      required: true,
+      minlength: 6,
+    },
+    shopName: {
+      type: String,
+      required: true,
       trim: true,
     },
-    businessName: {
-      type: String,
-      trim: true,
-    },
-    reason: {
-      type: String,
-      trim: true,
-    },
-    verifiedAt: {
+    approvedAt: {
       type: Date,
       default: null,
     },
