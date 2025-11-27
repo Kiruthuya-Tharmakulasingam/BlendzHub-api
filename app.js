@@ -28,10 +28,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://localhost:5173"],
+    credentials: true,
+  })
+);
 app.use(express.json());
-
-// Database connection will be established in startServer()
 
 app.get("/", (req, res) => {
   res.json({
