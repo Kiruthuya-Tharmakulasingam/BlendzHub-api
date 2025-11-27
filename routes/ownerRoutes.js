@@ -6,6 +6,7 @@ import {
   deleteMySalon,
   approveOwner,
   rejectOwner,
+  deleteOwner,
   listOwners,
   listPendingOwners,
 } from "../controllers/ownerController.js";
@@ -18,6 +19,7 @@ router.get("/", authenticate, requireRole("admin"), listOwners);
 router.get("/pending", authenticate, requireRole("admin"), listPendingOwners);
 router.patch("/:id/approve", authenticate, requireRole("admin"), approveOwner);
 router.patch("/:id/reject", authenticate, requireRole("admin"), rejectOwner);
+router.delete("/:id", authenticate, requireRole("admin"), deleteOwner);
 
 // Owner self-service routes
 router.use(authenticate);

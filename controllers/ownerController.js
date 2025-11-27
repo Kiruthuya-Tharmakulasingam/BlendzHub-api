@@ -64,6 +64,27 @@ export const rejectOwner = asyncHandler(async (req, res) => {
   });
 });
 
+export const deleteOwner = asyncHandler(async (req, res) => {
+  const owner = await Owner.findById(req.params.id);
+
+  if (!owner) {
+    throw new AppError("Owner not found", 404);
+  }
+
+  const user = await User.findById(owner.userId);
+
+  await Owner.findByIdAndDelete(req.params.id);
+
+  if (user) {
+    await User.findByIdAndDelete(user._id);
+  }
+
+  res.json({
+    success: true,
+    message: "Owner and associated user account deleted successfully.",
+  });
+});
+
 export const listOwners = asyncHandler(async (req, res) => {
   const {
     page = 1,

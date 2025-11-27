@@ -20,20 +20,23 @@ const ownerSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    phone: {
+      type: String,
+      required: [true, "Phone number is required"],
+      trim: true,
+    },
+    businessName: {
+      type: String,
+      required: [true, "Business name is required"],
+      trim: true,
+    },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
-    password: {
+    reason: {
       type: String,
-      required: true,
-      minlength: 6,
-    },
-    shopName: {
-      type: String,
-      required: true,
-      trim: true,
     },
     approvedAt: {
       type: Date,
