@@ -6,6 +6,31 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    description: {
+      type: String,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    stock: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ["active", "out-of-stock", "discontinued"],
+      default: "active",
+    },
+    category: {
+      type: String,
+    },
+    imageUrl: {
+      type: String,
+    },
     supplier: {
       type: String,
     },
