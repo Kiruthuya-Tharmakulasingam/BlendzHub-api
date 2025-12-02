@@ -90,6 +90,20 @@ app.get("/api/debug/env", (req, res) => {
   });
 });
 
+// Middleware to ensure database connection before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    res.status(500).json({
+      success: false,
+      message: "Database connection error. Please try again later.",
+    });
+  }
+});
+
 // Auth routes (public)
 app.use("/api/auth", authRoutes);
 
@@ -113,9 +127,6 @@ app.use("/api/salons", salonRoutes);
 app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);
-
-// Connect to database (for Vercel serverless, this happens on each cold start)
-connectDB().catch(err => console.error("Database connection error:", err));
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
