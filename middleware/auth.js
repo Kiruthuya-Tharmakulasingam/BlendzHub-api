@@ -7,11 +7,18 @@ import { AppError, asyncHandler } from "./errorhandler.js";
 
 export const tokenBlacklist = new Set();
 
-const getTokenFromHeader = (req) => {
+const getToken = (req) => {
+  // Check Authorization header first
   const authHeader = req.headers.authorization || "";
   if (authHeader.startsWith("Bearer ")) {
     return authHeader.split(" ")[1];
   }
+
+  // Then check cookies
+  if (req.cookies && req.cookies.token) {
+    return req.cookies.token;
+  }
+
   return null;
 };
 
@@ -61,7 +68,10 @@ const attachRoleContext = async (req) => {
 };
 
 export const authenticate = asyncHandler(async (req, res, next) => {
-  const token = getTokenFromHeader(req);
+  console.log("Auth Middleware - Headers:", req.headers);
+  console.log("Auth Middleware - Cookies:", req.cookies);
+  const token = getToken(req);
+  console.log("Auth Middleware - Token found:", !!token);
 
   if (!token) {
     throw new AppError("Authentication required", 401);
@@ -108,7 +118,7 @@ export const authenticate = asyncHandler(async (req, res, next) => {
 });
 
 export const authOptional = asyncHandler(async (req, res, next) => {
-  const token = getTokenFromHeader(req);
+  const token = getToken(req);
   if (!token) {
     return next();
   }

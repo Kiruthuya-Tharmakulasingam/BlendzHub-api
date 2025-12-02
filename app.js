@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import cookieParser from "cookie-parser"; // Added this import
 import connectDB from "./config/db.js";
 
 // Import models to ensure they're registered with Mongoose
@@ -35,6 +36,7 @@ app.use(
   })
 );
 app.use(express.json());
+app.use(cookieParser()); // Added this middleware
 
 app.get("/", (req, res) => {
   res.json({

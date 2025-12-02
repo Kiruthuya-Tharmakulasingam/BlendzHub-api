@@ -59,19 +59,35 @@ export const registerCustomer = asyncHandler(async (req, res) => {
 
   const token = issueToken(user._id);
 
-  res.status(201).json({
-    success: true,
-    message: "Customer registered successfully.",
-    token,
-    data: {
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-      },
-      profile,
-    },
+  console.log("Setting cookie with options:", {
+    httpOnly: true,
+    secure: false, // Force false for localhost debugging
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
+
+  res
+    .status(201)
+    .cookie("token", token, {
+      httpOnly: true,
+      secure: false, // Force false for localhost debugging
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    })
+    .json({
+      success: true,
+      message: "Customer registered successfully.",
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+        },
+        profile,
+      },
+    });
 });
 
 export const registerOwner = asyncHandler(async (req, res) => {
@@ -163,21 +179,36 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = issueToken(user._id);
 
-  res.json({
-    success: true,
-    message: "Login successful.",
-    token,
-    data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
-      owner: ownerProfile || undefined,
-      customer: customerProfile || undefined,
-    },
+  console.log("Setting cookie with options:", {
+    httpOnly: true,
+    secure: false, // Force false for localhost debugging
+    sameSite: "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
+
+  res
+    .cookie("token", token, {
+      httpOnly: true,
+      secure: false, // Force false for localhost debugging
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    })
+    .json({
+      success: true,
+      message: "Login successful.",
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+        owner: ownerProfile || undefined,
+        customer: customerProfile || undefined,
+      },
+    });
 });
 
 export const getMe = asyncHandler(async (req, res) => {
@@ -200,12 +231,7 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) {
-    throw new AppError("No token provided for logout.", 400);
-  }
-
-  blacklistToken(token);
+  res.clearCookie("token");
 
   res.json({
     success: true,
