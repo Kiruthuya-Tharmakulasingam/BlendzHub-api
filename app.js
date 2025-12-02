@@ -31,7 +31,29 @@ const PORT = process.env.PORT;
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      const allowedOrigins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        /\.vercel\.app$/, // Allow all Vercel deployments
+      ];
+      
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed instanceof RegExp) {
+          return allowed.test(origin);
+        }
+        return allowed === origin;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
@@ -92,17 +114,16 @@ app.use("/api/slots", slotRoutes);
 
 app.use(errorHandler);
 
-// Start server after database connection is established
-const startServer = async () => {
-  try {
-    await connectDB();
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
-};
+// Connect to database (for Vercel serverless, this happens on each cold start)
+connectDB().catch(err => console.error("Database connection error:", err));
 
-startServer();
+// For local development
+if (process.env.NODE_ENV !== 'production') {
+  const PORT_LOCAL = PORT || 5000;
+  app.listen(PORT_LOCAL, () => {
+    console.log(`Server running on port ${PORT_LOCAL}`);
+  });
+}
+
+// Export for Vercel serverless functions
+export default app;
