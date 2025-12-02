@@ -12,7 +12,8 @@ const connectDB = async () => {
     console.log(`DB Connected Successfully! Host: ${conn.connection.host}`);
   } catch (error) {
     console.error("DB Connection Error:", error.message);
-    process.exit(1);
+    // Don't call process.exit() in serverless - throw error instead
+    throw new Error(`Database connection failed: ${error.message}`);
   }
 };
 
