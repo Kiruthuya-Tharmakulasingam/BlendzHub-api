@@ -218,3 +218,45 @@ export const markNoShow = asyncHandler(async (req, res) => {
     data: appointment,
   });
 });
+
+// -----------------------------
+// UPDATE appointment status
+export const updateAppointmentStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  if (!status) {
+    throw new AppError("Status is required", 400);
+  }
+
+  const allowedStatuses = ["pending", "accepted", "in-progress", "completed", "cancelled", "no-show"];
+  if (!allowedStatuses.includes(status)) {
+    throw new AppError(`Invalid status. Allowed values: ${allowedStatuses.join(", ")}`, 400);
+  }
+
+  const filter = { _id: req.params.id };
+
+  // Role-based filter
+  if (req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  const appointment = await Appointment.findOne(filter);
+  if (!appointment) throw new AppError("Appointment not found", 404);
+
+  appointment.status = status;
+  if (status === "no-show") {
+    appointment.noShowAt = new Date();
+  }
+  await appointment.save();
+
+  const populatedAppointment = await Appointment.findById(appointment._id)
+    .populate("customerId", "name email")
+    .populate("serviceId", "name price")
+    .populate("salonId", "name location");
+
+  res.json({
+    success: true,
+    message: "Appointment status updated successfully",
+    data: populatedAppointment,
+  });
+});
