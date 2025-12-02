@@ -21,7 +21,7 @@ const connectDB = async () => {
   try {
     console.log("Establishing new database connection...");
     connectionPromise = mongoose.connect(process.env.MONGO_URI, {
-      bufferCommands: false,
+      bufferCommands: true, // Allow buffering for serverless
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
