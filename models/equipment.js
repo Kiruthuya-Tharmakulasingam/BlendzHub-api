@@ -11,6 +11,9 @@ const equipmentSchema = new mongoose.Schema(
       enum: ["available", "in-use", "maintenance", "unavailable"],
       default: "available",
     },
+    imageUrl: {
+      type: String,
+    },
     lastSterlizedDate: {
       type: Date,
     },
