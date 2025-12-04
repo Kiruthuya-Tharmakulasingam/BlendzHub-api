@@ -9,6 +9,7 @@ export const getAllProducts = asyncHandler(async (req, res) => {
     supplier,
     salonId,
     search,
+    status,
     minQualityRating,
     maxQualityRating,
     qualityRating,
@@ -34,6 +35,11 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
   // ID-based filtering
   if (salonId) filter.salonId = salonId;
+
+  // Status filtering
+  if (status) {
+    filter.status = status;
+  }
 
   // Quality rating filtering
   if (qualityRating) {
@@ -80,7 +86,9 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   // Validate sortBy field
   const allowedSortFields = [
     "name",
+    "price",
     "supplier",
+    "status",
     "qualityRating",
     "createdAt",
     "updatedAt",

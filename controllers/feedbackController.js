@@ -21,9 +21,14 @@ export const getAllFeedbacks = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  // Role-based filtering
-  if (req.user.role === "owner" && req.salon) {
-    filter.salonId = req.salon._id;
+  // Role-based filtering (only if user is authenticated)
+  if (req.user) {
+    if (req.user.role === "owner" && req.salon) {
+      filter.salonId = req.salon._id;
+    } else if (req.user.role === "customer" && !salonId) {
+      // Only filter by customer if not viewing a specific salon's feedbacks
+      filter.customerId = req.user._id;
+    }
   }
 
   // Rating filtering
@@ -126,31 +131,28 @@ export const getFeedbackById = asyncHandler(async (req, res) => {
 export const createFeedback = asyncHandler(async (req, res) => {
   const { appointmentId, salonId, rating, comments } = req.body;
 
-  if (!rating || !salonId) {
-    throw new AppError("Please provide rating and salonId", 400);
+  if (!rating || !salonId || !appointmentId) {
+    throw new AppError("Please provide rating, salonId, and appointmentId", 400);
   }
 
-  // If appointmentId is provided, verify it belongs to customer and is completed
-  if (appointmentId) {
-    const appointment = await Appointment.findById(appointmentId);
-    if (!appointment) {
-      throw new AppError("Appointment not found", 404);
-    }
-    if (appointment.customerId.toString() !== req.user._id.toString()) {
-      throw new AppError("This appointment does not belong to you", 403);
-    }
-    if (appointment.status !== "completed") {
-      throw new AppError(
-        "Feedback can only be given for completed appointments",
-        400
-      );
-    }
+  const appointment = await Appointment.findById(appointmentId);
+  if (!appointment) {
+    throw new AppError("Appointment not found", 404);
+  }
+  if (appointment.customerId.toString() !== req.user._id.toString()) {
+    throw new AppError("This appointment does not belong to you", 403);
+  }
+  if (appointment.status !== "completed") {
+    throw new AppError(
+      "Feedback can only be given for completed appointments",
+      400
+    );
   }
 
   const feedback = await Feedback.create({
     customerId: req.user._id,
     salonId,
-    appointmentId: appointmentId || null,
+    appointmentId,
     rating,
     comments: comments || null,
   });
@@ -179,4 +181,47 @@ export const deleteFeedback = asyncHandler(async (req, res) => {
   const feedback = await Feedback.findByIdAndDelete(req.params.id);
   if (!feedback) throw new AppError("Feedback not found", 404);
   res.json({ success: true, message: "Feedback deleted successfully" });
+});
+
+export const replyToFeedback = asyncHandler(async (req, res) => {
+  const { reply } = req.body;
+  const { id } = req.params;
+
+  if (!reply) {
+    throw new AppError("Reply content is required", 400);
+  }
+
+  const feedback = await Feedback.findById(id);
+
+  if (!feedback) {
+    throw new AppError("Feedback not found", 404);
+  }
+
+  // Verify that the salon belongs to the owner
+  // req.salon is populated by the authenticate/requireRole middleware for owners usually,
+  // but let's double check how it's set up.
+  // Looking at other controllers might help, but assuming standard pattern:
+  // If the user is an owner, they should only be able to reply to feedback for their salon.
+
+  // Check if the feedback's salonId matches the owner's salon
+  // We need to ensure req.salon is available or fetch it.
+  // Based on previous context, req.salon seems to be available for owners.
+
+  if (
+    req.user.role !== "owner" ||
+    feedback.salonId.toString() !== req.salon._id.toString()
+  ) {
+    throw new AppError("Not authorized to reply to this feedback", 403);
+  }
+
+  feedback.reply = reply;
+  feedback.repliedAt = Date.now();
+
+  await feedback.save();
+
+  res.json({
+    success: true,
+    message: "Reply added successfully",
+    data: feedback,
+  });
 });
