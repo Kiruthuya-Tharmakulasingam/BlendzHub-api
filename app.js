@@ -9,6 +9,7 @@ import "./models/user.js";
 import "./models/owner.js";
 import "./models/customer.js";
 import "./models/salon.js";
+import "./models/notification.js";
 
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
@@ -22,6 +23,7 @@ import productRoutes from "./routes/productRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
 import salonRoutes from "./routes/salonRoutes.js";
 import slotRoutes from "./routes/slotRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 import errorHandler from "./middleware/errorhandler.js";
 
@@ -125,14 +127,21 @@ app.use("/api/products", productRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/salons", salonRoutes);
 app.use("/api/slots", slotRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(errorHandler);
 
 // For local development
 if (process.env.NODE_ENV !== 'production') {
   const PORT_LOCAL = PORT || 5000;
-  app.listen(PORT_LOCAL, () => {
-    console.log(`Server running on port ${PORT_LOCAL}`);
+  // Connect to DB immediately on startup for local dev
+  connectDB().then(() => {
+    app.listen(PORT_LOCAL, () => {
+      console.log(`Server running on port ${PORT_LOCAL}`);
+    });
+  }).catch(err => {
+    console.error("Failed to connect to DB on startup:", err);
+    process.exit(1);
   });
 }
 
