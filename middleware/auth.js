@@ -68,10 +68,14 @@ const attachRoleContext = async (req) => {
 };
 
 export const authenticate = asyncHandler(async (req, res, next) => {
-  console.log("Auth Middleware - Headers:", req.headers);
-  console.log("Auth Middleware - Cookies:", req.cookies);
+  console.log("--- Auth Middleware Debug ---");
+  console.log("URL:", req.originalUrl);
+  console.log("Headers:", JSON.stringify(req.headers, null, 2));
+  console.log("Cookies (parsed):", req.cookies);
+  
   const token = getToken(req);
-  console.log("Auth Middleware - Token found:", !!token);
+  console.log("Token found:", !!token);
+  if (token) console.log("Token preview:", token.substring(0, 10) + "...");
 
   if (!token) {
     throw new AppError("Authentication required", 401);
