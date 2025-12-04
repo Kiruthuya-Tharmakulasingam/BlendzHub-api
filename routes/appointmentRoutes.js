@@ -7,6 +7,7 @@ import {
   deleteAppointment,
   markNoShow,
   updateAppointmentStatus,
+  rescheduleAppointment,
 } from "../controllers/appointmentController.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
 
@@ -18,11 +19,12 @@ router.get("/:id", authenticate, getAppointmentById);
 router.post("/", authenticate, requireRole("customer"), createAppointment);
 
 router.put("/:id", authenticate, requireRole(["owner"]), updateAppointment);
+router.put("/:id/reschedule", authenticate, rescheduleAppointment);
 
 router.patch("/:id/status", authenticate, requireRole(["owner"]), updateAppointmentStatus);
 
 router.patch("/:id/no-show", authenticate, requireRole(["owner"]), markNoShow);
 
-router.delete("/:id", authenticate, requireRole(["owner"]), deleteAppointment);
+router.delete("/:id", authenticate, requireRole(["customer", "owner"]), deleteAppointment);
 
 export default router;

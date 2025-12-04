@@ -5,16 +5,20 @@ import {
   createFeedback,
   updateFeedback,
   deleteFeedback,
+  replyToFeedback,
 } from "../controllers/feedbackController.js";
-import { authenticate, requireRole } from "../middleware/auth.js";
+import { authenticate, requireRole, authOptional } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, getAllFeedbacks);
-router.get("/:id", authenticate, getFeedbackById);
+// Allow public access to view feedbacks (especially for salon detail pages)
+// Authentication is optional - if authenticated, role-based filtering applies
+router.get("/", authOptional, getAllFeedbacks);
+router.get("/:id", authOptional, getFeedbackById);
 
 router.post("/", authenticate, requireRole("customer"), createFeedback);
 router.put("/:id", authenticate, requireRole("customer"), updateFeedback);
+router.put("/:id/reply", authenticate, requireRole("owner"), replyToFeedback);
 router.delete("/:id", authenticate, requireRole("admin"), deleteFeedback);
 
 export default router;
