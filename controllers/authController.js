@@ -63,7 +63,7 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: "lax", // 'lax' works for same-site and Vercel subdomains
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -187,22 +187,20 @@ export const login = asyncHandler(async (req, res) => {
 
   console.log("Setting cookie with options:", cookieOptions);
 
-  res
-    .cookie("token", token, cookieOptions)
-    .json({
-      success: true,
-      message: "Login successful.",
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-        owner: ownerProfile || undefined,
-        customer: customerProfile || undefined,
+  res.cookie("token", token, cookieOptions).json({
+    success: true,
+    message: "Login successful.",
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
       },
-    });
+      owner: ownerProfile || undefined,
+      customer: customerProfile || undefined,
+    },
+  });
 });
 
 export const getMe = asyncHandler(async (req, res) => {
@@ -277,6 +275,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Profile updated successfully",
-    data: { user: updatedUser }
+    data: { user: updatedUser },
   });
 });
