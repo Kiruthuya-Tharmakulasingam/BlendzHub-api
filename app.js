@@ -24,6 +24,7 @@ import serviceRoutes from "./routes/serviceRoutes.js";
 import salonRoutes from "./routes/salonRoutes.js";
 import slotRoutes from "./routes/slotRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
 
 import errorHandler from "./middleware/errorhandler.js";
 
@@ -128,6 +129,7 @@ app.use("/api/services", serviceRoutes);
 app.use("/api/salons", salonRoutes);
 app.use("/api/slots", slotRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api", uploadRoutes);
 
 app.use(errorHandler);
 
