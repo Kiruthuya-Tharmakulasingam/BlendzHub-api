@@ -63,7 +63,7 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: isProduction ? "none" : "lax", // 'none' for cross-site in production
+    sameSite: "lax", // 'lax' works for same-site and Vercel subdomains
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -180,7 +180,7 @@ export const login = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: isProduction ? "none" : "lax", // 'none' for cross-site in production
+    sameSite: "lax", // 'lax' works for same-site and Vercel subdomains
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
