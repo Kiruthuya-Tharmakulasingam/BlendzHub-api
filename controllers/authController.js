@@ -180,7 +180,7 @@ export const login = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: "lax", // 'lax' works for same-site and Vercel subdomains
+    sameSite: isProduction ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
