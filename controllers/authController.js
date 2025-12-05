@@ -59,23 +59,20 @@ export const registerCustomer = asyncHandler(async (req, res) => {
 
   const token = issueToken(user._id);
 
-  console.log("Setting cookie with options:", {
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
     httpOnly: true,
-    secure: false, // Force false for localhost debugging
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    secure: isProduction, // true in production (HTTPS), false in development
+    sameSite: isProduction ? "none" : "lax", // 'none' for cross-site in production
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
-  });
+  };
+
+  console.log("Setting cookie with options:", cookieOptions);
 
   res
     .status(201)
-    .cookie("token", token, {
-      httpOnly: true,
-      secure: false, // Force false for localhost debugging
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: "/",
-    })
+    .cookie("token", token, cookieOptions)
     .json({
       success: true,
       message: "Customer registered successfully.",
@@ -179,22 +176,19 @@ export const login = asyncHandler(async (req, res) => {
 
   const token = issueToken(user._id);
 
-  console.log("Setting cookie with options:", {
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieOptions = {
     httpOnly: true,
-    secure: false, // Force false for localhost debugging
-    sameSite: "lax",
-    maxAge: 30 * 24 * 60 * 60 * 1000,
+    secure: isProduction, // true in production (HTTPS), false in development
+    sameSite: isProduction ? "none" : "lax", // 'none' for cross-site in production
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
-  });
+  };
+
+  console.log("Setting cookie with options:", cookieOptions);
 
   res
-    .cookie("token", token, {
-      httpOnly: true,
-      secure: false, // Force false for localhost debugging
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      path: "/",
-    })
+    .cookie("token", token, cookieOptions)
     .json({
       success: true,
       message: "Login successful.",
