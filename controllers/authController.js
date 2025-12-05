@@ -233,8 +233,56 @@ export const getMe = asyncHandler(async (req, res) => {
 export const logout = asyncHandler(async (req, res) => {
   res.clearCookie("token");
 
-  res.json({
+  res.status(200).json({
     success: true,
-    message: "Logged out successfully.",
+    message: "Logged out successfully",
+  });
+});
+
+// Update user profile
+export const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { name, email, contact, phone, image } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // Update user fields
+  if (name) user.name = name;
+  if (email) user.email = normalizeEmail(email);
+  if (image) user.image = image;
+
+  await user.save();
+
+  // Update role-specific profile
+  if (user.role === "customer") {
+    const customer = await Customer.findOne({ userId: user._id });
+    if (customer) {
+      if (name) customer.name = name;
+      if (email) customer.email = normalizeEmail(email);
+      if (contact) customer.contact = contact;
+      if (phone) customer.phone = phone;
+      await customer.save();
+    }
+  } else if (user.role === "owner") {
+    const owner = await Owner.findOne({ userId: user._id });
+    if (owner) {
+      if (name) owner.name = name;
+      if (email) owner.email = normalizeEmail(email);
+      if (contact) owner.contact = contact;
+      if (phone) owner.phone = phone;
+      await owner.save();
+    }
+  }
+
+  // Return updated user without password
+  const updatedUser = await User.findById(userId).select("-password");
+
+  res.status(200).json({
+    success: true,
+    message: "Profile updated successfully",
+    data: { user: updatedUser }
   });
 });
