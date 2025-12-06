@@ -68,7 +68,9 @@ export const registerCustomer = asyncHandler(async (req, res) => {
     path: "/",
   };
 
+  // Log cookie configuration for debugging
   console.log("Setting cookie with options:", cookieOptions);
+  console.log("Environment:", process.env.NODE_ENV);
 
   res
     .status(201)
@@ -185,7 +187,9 @@ export const login = asyncHandler(async (req, res) => {
     path: "/",
   };
 
+  // Log cookie configuration for debugging
   console.log("Setting cookie with options:", cookieOptions);
+  console.log("Environment:", process.env.NODE_ENV);
 
   res.cookie("token", token, cookieOptions).json({
     success: true,
@@ -223,7 +227,14 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
-  res.clearCookie("token");
+  const isProduction = process.env.NODE_ENV === "production";
+  
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
 
   res.status(200).json({
     success: true,
