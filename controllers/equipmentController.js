@@ -22,21 +22,27 @@ export const getAllEquipments = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  // ---------- ROLE-BASED FILTER ----------
-  if (req.user) {
-    if (req.user.role === "owner" && req.salon) {
-      filter.salonId = req.salon._id;
-    }
+  // ---------- OWNER-ONLY ACCESS ----------
+  // Owners can only see their own salon's equipment
+  if (req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
 
-    if (status) {
-      const statusArray = status.split(",").map((s) => s.trim());
-      filter.status =
-        statusArray.length > 1 ? { $in: statusArray } : statusArray[0];
-    }
+  // Status filtering
+  if (status) {
+    const statusArray = status.split(",").map((s) => s.trim());
+    filter.status =
+      statusArray.length > 1 ? { $in: statusArray } : statusArray[0];
   }
 
   // ---------- SALON FILTER ----------
-  if (salonId) filter.salonId = salonId;
+  // If salonId is provided, it must match the owner's salon
+  if (salonId) {
+    if (req.user.role === "owner" && req.salon && salonId !== req.salon._id.toString()) {
+      throw new AppError("You can only access equipment from your own salon", 403);
+    }
+    filter.salonId = salonId;
+  }
 
   // ---------- CREATED DATE FILTER ----------
   if (startDate || endDate) {
@@ -119,11 +125,9 @@ export const getAllEquipments = asyncHandler(async (req, res) => {
 export const getEquipmentById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id };
 
-  // Role-based access
-  if (req.user) {
-    if (req.user.role === "owner" && req.salon) {
-      filter.salonId = req.salon._id;
-    }
+  // Owner-only access: owners can only see their own salon's equipment
+  if (req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
   }
 
   const equipment = await Equipment.findOne(filter).populate(

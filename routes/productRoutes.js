@@ -10,8 +10,9 @@ import { authOptional, authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", authOptional, getAllProducts);
-router.get("/:id", authOptional, getProductById);
+// Products are only accessible to authenticated owners
+router.get("/", authenticate, requireRole(["owner"]), getAllProducts);
+router.get("/:id", authenticate, requireRole(["owner"]), getProductById);
 
 router.post("/", authenticate, requireRole(["owner"]), createProduct);
 router.put("/:id", authenticate, requireRole(["owner"]), updateProduct);

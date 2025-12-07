@@ -21,20 +21,23 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 
   const filter = {};
 
-  // Role-based filtering (if authenticated)
-  if (req.user) {
-    if (req.user.role === "owner" && req.salon) {
-      filter.salonId = req.salon._id;
+  // Owner-only access: owners can only see their own salon's products
+  if (req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  // If salonId is provided, it must match the owner's salon
+  if (salonId) {
+    if (req.user.role === "owner" && req.salon && salonId !== req.salon._id.toString()) {
+      throw new AppError("You can only access products from your own salon", 403);
     }
+    filter.salonId = salonId;
   }
 
   // Supplier filtering
   if (supplier) {
     filter.supplier = new RegExp(supplier, "i");
   }
-
-  // ID-based filtering
-  if (salonId) filter.salonId = salonId;
 
   // Status filtering
   if (status) {
@@ -126,11 +129,9 @@ export const getAllProducts = asyncHandler(async (req, res) => {
 export const getProductById = asyncHandler(async (req, res) => {
   const filter = { _id: req.params.id };
 
-  // Role-based access (if authenticated)
-  if (req.user) {
-    if (req.user.role === "owner" && req.salon) {
-      filter.salonId = req.salon._id;
-    }
+  // Owner-only access: owners can only see their own salon's products
+  if (req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
   }
 
   const product = await Product.findOne(filter).populate(

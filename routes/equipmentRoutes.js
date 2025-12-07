@@ -10,8 +10,9 @@ import { authOptional, authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", authOptional, getAllEquipments);
-router.get("/:id", authOptional, getEquipmentById);
+// Equipment is only accessible to authenticated owners
+router.get("/", authenticate, requireRole(["owner"]), getAllEquipments);
+router.get("/:id", authenticate, requireRole(["owner"]), getEquipmentById);
 
 router.post("/", authenticate, requireRole(["owner"]), createEquipment);
 router.put("/:id", authenticate, requireRole(["owner"]), updateEquipment);
