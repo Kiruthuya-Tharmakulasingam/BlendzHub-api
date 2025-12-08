@@ -22,7 +22,19 @@ export const getAllProducts = asyncHandler(async (req, res) => {
   const filter = {};
 
   // Owner-only access: owners can only see their own salon's products
-  if (req.user.role === "owner" && req.salon) {
+  if (req.user.role === "owner") {
+    // If owner doesn't have a salon yet, return empty array with helpful message
+    if (!req.salon) {
+      return res.json({
+        success: true,
+        total: 0,
+        page: 1,
+        limit: parseInt(limit),
+        totalPages: 0,
+        data: [],
+        message: "Please create a salon first to manage products. Visit the 'My Salon' page to get started.",
+      });
+    }
     filter.salonId = req.salon._id;
   }
 

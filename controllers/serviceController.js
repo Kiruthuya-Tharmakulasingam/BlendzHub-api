@@ -30,9 +30,17 @@ export const getAllServices = asyncHandler(async (req, res) => {
   
   // Owner-only access: owners can only see their own salon's services
   if (req.user && req.user.role === "owner") {
-    // Owners MUST have a salon - if req.salon is not set, they need to create one first
+    // Owners MUST have a salon - if req.salon is not set, return empty array with helpful message
     if (!req.salon) {
-      throw new AppError("You must have a salon to access services. Please create a salon first.", 400);
+      return res.json({
+        success: true,
+        total: 0,
+        page: 1,
+        limit: parseInt(limit),
+        totalPages: 0,
+        data: [],
+        message: "Please create a salon first to manage services. Visit the 'My Salon' page to get started.",
+      });
     }
     
     // CRITICAL: Ensure req.salon._id exists and is valid
