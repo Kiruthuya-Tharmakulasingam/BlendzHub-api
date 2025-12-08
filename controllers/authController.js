@@ -63,7 +63,7 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax", // Use "lax" as requested. If you need cross-origin support, change to "none" in production
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -182,7 +182,7 @@ export const login = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax", // Use "lax" as requested. If you need cross-origin support, change to "none" in production
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -198,13 +198,13 @@ export const login = asyncHandler(async (req, res) => {
   let dashboardPath = "/";
   switch (fullUser.role) {
     case "admin":
-      dashboardPath = "/dashboard/admin";
+      dashboardPath = "/admin/dashboard";
       break;
     case "owner":
-      dashboardPath = "/dashboard/owner";
+      dashboardPath = "/owner/dashboard";
       break;
     case "customer":
-      dashboardPath = "/dashboard/customer";
+      dashboardPath = "/customer/dashboard";
       break;
     default:
       dashboardPath = "/";
@@ -214,7 +214,16 @@ export const login = asyncHandler(async (req, res) => {
     success: true,
     message: "Login successful.",
     data: {
-      user: fullUser,
+      user: {
+        id: fullUser._id,
+        name: fullUser.name,
+        email: fullUser.email,
+        role: fullUser.role,
+        image: fullUser.image,
+        isActive: fullUser.isActive,
+        createdAt: fullUser.createdAt,
+        updatedAt: fullUser.updatedAt,
+      },
       owner: ownerProfile || undefined,
       customer: customerProfile || undefined,
     },
@@ -223,8 +232,24 @@ export const login = asyncHandler(async (req, res) => {
 });
 
 export const getMe = asyncHandler(async (req, res) => {
+  // Get fresh user data from database
+  const user = await User.findById(req.user._id).select("-password");
+  
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
   const response = {
-    user: req.user,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      image: user.image,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
   };
 
   if (req.user.role === "owner" && req.ownerProfile) {
@@ -247,7 +272,7 @@ export const logout = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? "none" : "lax",
+    sameSite: "lax", // Match login cookie settings
     path: "/",
   });
 
@@ -298,9 +323,21 @@ export const updateProfile = asyncHandler(async (req, res) => {
   // Return updated user without password
   const updatedUser = await User.findById(userId).select("-password");
 
+  // Don't clear or modify cookies - token remains valid
   res.status(200).json({
     success: true,
     message: "Profile updated successfully",
-    data: { user: updatedUser },
+    data: { 
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        image: updatedUser.image,
+        isActive: updatedUser.isActive,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+      }
+    },
   });
 });
