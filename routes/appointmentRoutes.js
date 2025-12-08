@@ -8,12 +8,14 @@ import {
   markNoShow,
   updateAppointmentStatus,
   rescheduleAppointment,
+  getCompletedBookings,
 } from "../controllers/appointmentController.js";
 import { authenticate, requireRole } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/", authenticate, getAllAppointments);
+router.get("/completed", authenticate, getCompletedBookings);
 router.get("/:id", authenticate, getAppointmentById);
 
 router.post("/", authenticate, requireRole("customer"), createAppointment);

@@ -560,3 +560,35 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
     data: populatedAppointment,
   });
 });
+
+// -----------------------------
+// GET completed bookings for customer
+export const getCompletedBookings = asyncHandler(async (req, res) => {
+  const { customerId } = req.query;
+
+  const filter = {
+    status: "completed",
+  };
+
+  // Role-based filter - customers can only see their own bookings
+  if (req.user.role === "customer") {
+    filter.customerId = req.user._id;
+  } else if (customerId && req.user.role !== "customer") {
+    // Admin/owner can specify customerId
+    filter.customerId = customerId;
+  } else if (req.user.role === "customer") {
+    // If customer but no customerId in query, use their own ID
+    filter.customerId = req.user._id;
+  }
+
+  const appointments = await Appointment.find(filter)
+    .populate("salonId", "name location")
+    .populate("serviceId", "name price duration")
+    .populate("customerId", "name email")
+    .sort({ date: -1, time: -1 });
+
+  res.json({
+    success: true,
+    data: appointments,
+  });
+});

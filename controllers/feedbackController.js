@@ -225,3 +225,32 @@ export const replyToFeedback = asyncHandler(async (req, res) => {
     data: feedback,
   });
 });
+
+// Get customer's own feedbacks
+export const getMyFeedbacks = asyncHandler(async (req, res) => {
+  const { customerId } = req.query;
+
+  const filter = {};
+
+  // Role-based filter - customers can only see their own feedbacks
+  if (req.user.role === "customer") {
+    filter.customerId = req.user._id;
+  } else if (customerId && req.user.role !== "customer") {
+    // Admin/owner can specify customerId
+    filter.customerId = customerId;
+  } else if (req.user.role === "customer") {
+    // If customer but no customerId in query, use their own ID
+    filter.customerId = req.user._id;
+  }
+
+  const feedbacks = await Feedback.find(filter)
+    .populate("customerId", "name email")
+    .populate("salonId", "name location")
+    .populate("appointmentId")
+    .sort({ createdAt: -1 });
+
+  res.json({
+    success: true,
+    data: feedbacks,
+  });
+});

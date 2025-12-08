@@ -17,6 +17,7 @@ import profileRoutes from "./routes/profileRoutes.js";
 import ownerRoutes from "./routes/ownerRoutes.js";
 import customerRoutes from "./routes/customerRoutes.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
+import bookingsRoutes from "./routes/bookingsRoutes.js";
 import equipmentRoutes from "./routes/equipmentRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
@@ -122,6 +123,7 @@ app.use("/api/owners", ownerRoutes);
 // Entity routes
 app.use("/api/customers", customerRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/bookings", bookingsRoutes);
 app.use("/api/equipments", equipmentRoutes);
 app.use("/api/feedbacks", feedbackRoutes);
 app.use("/api/products", productRoutes);
