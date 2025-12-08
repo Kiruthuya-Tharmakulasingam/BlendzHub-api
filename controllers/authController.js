@@ -194,6 +194,22 @@ export const login = asyncHandler(async (req, res) => {
   // Get full user object without password
   const fullUser = await User.findById(user._id).select("-password");
 
+  // Determine dashboard path based on role
+  let dashboardPath = "/";
+  switch (fullUser.role) {
+    case "admin":
+      dashboardPath = "/dashboard/admin";
+      break;
+    case "owner":
+      dashboardPath = "/dashboard/owner";
+      break;
+    case "customer":
+      dashboardPath = "/dashboard/customer";
+      break;
+    default:
+      dashboardPath = "/";
+  }
+
   res.cookie("token", token, cookieOptions).json({
     success: true,
     message: "Login successful.",
@@ -202,6 +218,7 @@ export const login = asyncHandler(async (req, res) => {
       owner: ownerProfile || undefined,
       customer: customerProfile || undefined,
     },
+    dashboardPath: dashboardPath,
   });
 });
 
