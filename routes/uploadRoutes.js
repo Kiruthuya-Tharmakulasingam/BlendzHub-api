@@ -38,6 +38,7 @@ router.post('/upload', authenticate, upload.single('image'), async (req, res) =>
     res.status(200).json({
       success: true,
       data: {
+        url: result.secure_url,
         secure_url: result.secure_url,
         public_id: result.public_id
       }
