@@ -36,20 +36,16 @@ const attachRoleContext = async (req) => {
 
   if (req.user.role === "owner") {
     const ownerProfile = await Owner.findOne({ userId: req.user._id });
-    if (!ownerProfile) {
-      throw new AppError(
-        "Owner profile not found. Please contact support.",
-        403
-      );
-    }
-    if (ownerProfile.status !== "approved") {
-      throw new AppError("Your owner account is not approved yet.", 403);
-    }
-    req.ownerProfile = ownerProfile;
+    
+    // Don't throw error if profile missing/not approved - just don't attach context
+    // This allows controllers to handle the "no salon" state gracefully
+    if (ownerProfile && ownerProfile.status === "approved") {
+      req.ownerProfile = ownerProfile;
 
-    const salon = await Salon.findOne({ ownerId: req.user._id });
-    if (salon) {
-      req.salon = salon;
+      const salon = await Salon.findOne({ ownerId: req.user._id });
+      if (salon) {
+        req.salon = salon;
+      }
     }
   }
 
