@@ -191,15 +191,42 @@ export const createProduct = asyncHandler(async (req, res) => {
 });
 
 export const updateProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findByIdAndUpdate(req.params.id, req.body, {
+  const filter = { _id: req.params.id };
+
+  // Owner-only access: owners can only update their own salon's products
+  if (req.user && req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  // Don't allow changing salonId if user is an owner
+  if (req.user && req.user.role === "owner" && req.body.salonId) {
+    delete req.body.salonId;
+  }
+
+  const product = await Product.findOneAndUpdate(filter, req.body, {
     new: true,
-  });
-  if (!product) throw new AppError("Product not found", 404);
+  }).populate("salonId", "name location");
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
   res.json({ success: true, data: product });
 });
 
 export const deleteProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findByIdAndDelete(req.params.id);
-  if (!product) throw new AppError("Product not found", 404);
+  const filter = { _id: req.params.id };
+
+  // Owner-only access: owners can only delete their own salon's products
+  if (req.user && req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  const product = await Product.findOneAndDelete(filter);
+
+  if (!product) {
+    throw new AppError("Product not found", 404);
+  }
+
   res.json({ success: true, message: "Product deleted successfully" });
 });

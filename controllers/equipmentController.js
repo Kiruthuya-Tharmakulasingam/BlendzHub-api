@@ -185,11 +185,25 @@ export const createEquipment = asyncHandler(async (req, res) => {
 // UPDATE EQUIPMENT
 
 export const updateEquipment = asyncHandler(async (req, res) => {
-  const equipment = await Equipment.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-  });
+  const filter = { _id: req.params.id };
 
-  if (!equipment) throw new AppError("Equipment not found", 404);
+  // Owner-only access: owners can only update their own salon's equipment
+  if (req.user && req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  // Don't allow changing salonId if user is an owner
+  if (req.user && req.user.role === "owner" && req.body.salonId) {
+    delete req.body.salonId;
+  }
+
+  const equipment = await Equipment.findOneAndUpdate(filter, req.body, {
+    new: true,
+  }).populate("salonId", "name location");
+
+  if (!equipment) {
+    throw new AppError("Equipment not found", 404);
+  }
 
   res.json({ success: true, data: equipment });
 });
@@ -197,9 +211,18 @@ export const updateEquipment = asyncHandler(async (req, res) => {
 // DELETE EQUIPMENT
 
 export const deleteEquipment = asyncHandler(async (req, res) => {
-  const equipment = await Equipment.findByIdAndDelete(req.params.id);
+  const filter = { _id: req.params.id };
 
-  if (!equipment) throw new AppError("Equipment not found", 404);
+  // Owner-only access: owners can only delete their own salon's equipment
+  if (req.user && req.user.role === "owner" && req.salon) {
+    filter.salonId = req.salon._id;
+  }
+
+  const equipment = await Equipment.findOneAndDelete(filter);
+
+  if (!equipment) {
+    throw new AppError("Equipment not found", 404);
+  }
 
   res.json({
     success: true,
