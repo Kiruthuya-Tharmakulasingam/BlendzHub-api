@@ -191,16 +191,14 @@ export const login = asyncHandler(async (req, res) => {
   console.log("Setting cookie with options:", cookieOptions);
   console.log("Environment:", process.env.NODE_ENV);
 
+  // Get full user object without password
+  const fullUser = await User.findById(user._id).select("-password");
+
   res.cookie("token", token, cookieOptions).json({
     success: true,
     message: "Login successful.",
     data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      user: fullUser,
       owner: ownerProfile || undefined,
       customer: customerProfile || undefined,
     },

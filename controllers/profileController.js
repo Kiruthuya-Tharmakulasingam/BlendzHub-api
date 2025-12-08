@@ -17,16 +17,27 @@ export const getProfile = asyncHandler(async (req, res) => {
 // @route   PUT /api/profile
 // @access  Private (all authenticated users)
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, image } = req.body;
   
   // Don't allow password update through this route
-  const { password, ...updateData } = req.body;
+  // Also exclude phone as it's not in User model (it's in Customer/Owner models)
+  const { password, phone, ...updateData } = req.body;
+  
+  // Only allow updating fields that exist in User model
+  const allowedFields = {};
+  if (name !== undefined) allowedFields.name = name;
+  if (email !== undefined) allowedFields.email = email;
+  if (image !== undefined) allowedFields.image = image;
   
   const user = await User.findByIdAndUpdate(
     req.user._id,
-    updateData,
+    allowedFields,
     { new: true, runValidators: true }
   ).select("-password");
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
 
   res.status(200).json({
     success: true,
