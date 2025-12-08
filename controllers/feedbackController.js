@@ -170,16 +170,68 @@ export const createFeedback = asyncHandler(async (req, res) => {
 });
 
 export const updateFeedback = asyncHandler(async (req, res) => {
-  const feedback = await Feedback.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
+  const feedback = await Feedback.findById(req.params.id);
+  
+  if (!feedback) {
+    throw new AppError("Feedback not found", 404);
+  }
+
+  // Authorization: Customers can update their own feedbacks, owners can update feedbacks for their salon
+  if (req.user.role === "customer") {
+    if (feedback.customerId.toString() !== req.user._id.toString()) {
+      throw new AppError("Not authorized to update this feedback", 403);
+    }
+  } else if (req.user.role === "owner") {
+    if (!req.salon || feedback.salonId.toString() !== req.salon._id.toString()) {
+      throw new AppError("Not authorized to update this feedback", 403);
+    }
+  } else {
+    throw new AppError("Not authorized to update feedback", 403);
+  }
+
+  // Only allow updating rating and comments
+  const { rating, comments } = req.body;
+  const updateData = {};
+  if (rating !== undefined) updateData.rating = rating;
+  if (comments !== undefined) updateData.comments = comments;
+
+  const updatedFeedback = await Feedback.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    { new: true }
+  )
+    .populate("customerId", "name email")
+    .populate("salonId", "name location")
+    .populate("appointmentId");
+
+  res.json({
+    success: true,
+    message: "Feedback updated successfully",
+    data: updatedFeedback,
   });
-  if (!feedback) throw new AppError("Feedback not found", 404);
-  res.json({ success: true, data: feedback });
 });
 
 export const deleteFeedback = asyncHandler(async (req, res) => {
-  const feedback = await Feedback.findByIdAndDelete(req.params.id);
-  if (!feedback) throw new AppError("Feedback not found", 404);
+  const feedback = await Feedback.findById(req.params.id);
+  
+  if (!feedback) {
+    throw new AppError("Feedback not found", 404);
+  }
+
+  // Authorization: Customers can delete their own feedbacks, owners can delete feedbacks for their salon
+  if (req.user.role === "customer") {
+    if (feedback.customerId.toString() !== req.user._id.toString()) {
+      throw new AppError("Not authorized to delete this feedback", 403);
+    }
+  } else if (req.user.role === "owner") {
+    if (!req.salon || feedback.salonId.toString() !== req.salon._id.toString()) {
+      throw new AppError("Not authorized to delete this feedback", 403);
+    }
+  } else if (req.user.role !== "admin") {
+    throw new AppError("Not authorized to delete feedback", 403);
+  }
+
+  await Feedback.findByIdAndDelete(req.params.id);
   res.json({ success: true, message: "Feedback deleted successfully" });
 });
 

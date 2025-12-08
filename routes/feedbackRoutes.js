@@ -20,8 +20,8 @@ router.get("/:id", authOptional, getFeedbackById);
 
 router.post("/", authenticate, requireRole("customer"), createFeedback);
 router.post("/create", authenticate, requireRole("customer"), createFeedback);
-router.put("/:id", authenticate, requireRole("customer"), updateFeedback);
+router.put("/:id", authenticate, updateFeedback);
 router.put("/:id/reply", authenticate, requireRole("owner"), replyToFeedback);
-router.delete("/:id", authenticate, requireRole("admin"), deleteFeedback);
+router.delete("/:id", authenticate, deleteFeedback);
 
 export default router;
