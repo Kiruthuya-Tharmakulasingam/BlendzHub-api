@@ -118,6 +118,7 @@ export const getAppointmentById = asyncHandler(async (req, res) => {
 // -----------------------------
 // CREATE appointment (slot conflict check)
 export const createAppointment = asyncHandler(async (req, res) => {
+  console.log("createAppointment payload:", req.body);
   const { salonId, serviceId, date, time, notes } = req.body;
 
   if (!salonId || !serviceId || !date || !time) {
