@@ -63,7 +63,7 @@ export const registerCustomer = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: "lax", // Use "lax" as requested. If you need cross-origin support, change to "none" in production
+    sameSite: isProduction ? "none" : "lax", // Use "none" in production for cross-origin support
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -182,7 +182,7 @@ export const login = asyncHandler(async (req, res) => {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // true in production (HTTPS), false in development
-    sameSite: "lax", // Use "lax" as requested. If you need cross-origin support, change to "none" in production
+    sameSite: isProduction ? "none" : "lax", // Use "none" in production for cross-origin support
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: "/",
   };
@@ -272,7 +272,7 @@ export const logout = asyncHandler(async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: isProduction,
-    sameSite: "lax", // Match login cookie settings
+    sameSite: isProduction ? "none" : "lax", // Match login cookie settings
     path: "/",
   });
 
