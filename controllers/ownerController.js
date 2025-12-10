@@ -163,7 +163,10 @@ export const getMySalon = asyncHandler(async (req, res) => {
   );
 
   if (!salon) {
-    throw new AppError("You don't have a salon. Please create one first.", 404);
+    return res.json({
+      success: true,
+      data: null,
+    });
   }
 
   res.json({
