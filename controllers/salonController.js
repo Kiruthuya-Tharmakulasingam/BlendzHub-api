@@ -2,6 +2,13 @@ import Salon from "../models/salon.js";
 import { asyncHandler, AppError } from "../middleware/errorhandler.js";
 
 export const getAllSalons = asyncHandler(async (req, res) => {
+  console.log("getAllSalons called");
+  console.log("Query params:", req.query);
+  console.log(
+    "User:",
+    req.user ? { id: req.user._id, role: req.user.role } : "Not authenticated"
+  );
+
   const {
     page = 1,
     limit = 10,
@@ -59,10 +66,7 @@ export const getAllSalons = asyncHandler(async (req, res) => {
 
     if (Object.keys(filter).length > 0) {
       const combinedFilter = {
-        $and: [
-          { ...filter },
-          { $or: searchConditions },
-        ],
+        $and: [{ ...filter }, { $or: searchConditions }],
       };
       Object.keys(filter).forEach((key) => delete filter[key]);
       Object.assign(filter, combinedFilter);
@@ -71,14 +75,31 @@ export const getAllSalons = asyncHandler(async (req, res) => {
     }
   }
 
+  console.log("🔎 Applied filter:", JSON.stringify(filter, null, 2));
+
   // Validate sortBy field
-  const allowedSortFields = ["name", "location", "type", "createdAt", "updatedAt"];
+  const allowedSortFields = [
+    "name",
+    "location",
+    "type",
+    "createdAt",
+    "updatedAt",
+  ];
   const sortField = allowedSortFields.includes(sortBy) ? sortBy : "createdAt";
   const sortDirection = sortOrder.toLowerCase() === "asc" ? 1 : -1;
   const sort = { [sortField]: sortDirection };
 
+  console.log("Sort:", sort);
+
+  // Debug: Check database connection
+  const mongoose = await import("mongoose");
+  console.log("DB Connection State:", mongoose.default.connection.readyState);
+  console.log("DB Name:", mongoose.default.connection.db?.databaseName);
+  console.log("Collection:", "salons");
+
   // Get total count with filters
   const total = await Salon.countDocuments(filter);
+  console.log(`Total salons matching filter: ${total}`);
 
   // Calculate pagination
   const pageNum = Math.max(1, parseInt(page));
@@ -93,6 +114,15 @@ export const getAllSalons = asyncHandler(async (req, res) => {
     .skip(skip)
     .limit(limitNum);
 
+  console.log(`Found ${salons.length} salons for current page`);
+  if (salons.length > 0) {
+    console.log("Sample salon:", {
+      id: salons[0]._id,
+      name: salons[0].name,
+      location: salons[0].location,
+    });
+  }
+
   res.json({
     success: true,
     total,
@@ -104,8 +134,10 @@ export const getAllSalons = asyncHandler(async (req, res) => {
 });
 
 export const getSalonById = asyncHandler(async (req, res) => {
-  const salon = await Salon.findById(req.params.id)
-    .populate("ownerId", "name email");
+  const salon = await Salon.findById(req.params.id).populate(
+    "ownerId",
+    "name email"
+  );
   if (!salon) throw new AppError("Salon not found", 404);
   res.json({ success: true, data: salon });
 });
@@ -132,8 +164,10 @@ export const createSalon = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { salonId: salon._id });
   }
 
-  const populatedSalon = await Salon.findById(salon._id)
-    .populate("ownerId", "name email");
+  const populatedSalon = await Salon.findById(salon._id).populate(
+    "ownerId",
+    "name email"
+  );
 
   res.status(201).json({
     success: true,
@@ -153,11 +187,13 @@ export const updateSalon = asyncHandler(async (req, res) => {
   const salon = await Salon.findOneAndUpdate(filter, req.body, {
     new: true,
     runValidators: true,
-  })
-    .populate("ownerId", "name email");
+  }).populate("ownerId", "name email");
 
   if (!salon) {
-    throw new AppError("Salon not found or you don't have permission to update it", 404);
+    throw new AppError(
+      "Salon not found or you don't have permission to update it",
+      404
+    );
   }
 
   res.json({
@@ -178,7 +214,10 @@ export const deleteSalon = asyncHandler(async (req, res) => {
   const salon = await Salon.findOneAndDelete(filter);
 
   if (!salon) {
-    throw new AppError("Salon not found or you don't have permission to delete it", 404);
+    throw new AppError(
+      "Salon not found or you don't have permission to delete it",
+      404
+    );
   }
 
   // Update user's salonId if owner
