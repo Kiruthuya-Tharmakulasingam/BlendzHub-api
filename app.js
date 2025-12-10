@@ -82,17 +82,61 @@ app.get("/", (req, res) => {
 });
 
 // Debug endpoint to check environment variables
-app.get("/api/debug/env", (req, res) => {
-  res.json({
-    hasJwtSecret: !!process.env.JWT_SECRET,
-    jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
-    hasMongoUri: !!process.env.MONGO_URI,
-    nodeEnv: process.env.NODE_ENV,
-    message: process.env.JWT_SECRET
-      ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")"
-      : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables",
-  });
+app.get("/api/debug/env", async (req, res) => {
+  try {
+    await connectDB();
+    const mongoose = await import("mongoose");
+    
+    res.json({
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+      hasMongoUri: !!process.env.MONGO_URI,
+      nodeEnv: process.env.NODE_ENV,
+      dbConnectionState: mongoose.default.connection.readyState,
+      dbName: mongoose.default.connection.db?.databaseName || "Not connected",
+      dbHost: mongoose.default.connection.host || "Not connected",
+      message: process.env.JWT_SECRET
+        ? "JWT_SECRET is set (length: " + process.env.JWT_SECRET.length + ")"
+        : "JWT_SECRET is NOT set - add it in Vercel Dashboard → Settings → Environment Variables",
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to connect to database",
+      message: error.message
+    });
+  }
 });
+
+// Debug endpoint to check salon data directly
+app.get("/api/debug/salons", async (req, res) => {
+  try {
+    await connectDB();
+    const mongoose = await import("mongoose");
+    const Salon = mongoose.default.models.Salon || (await import("./models/salon.js")).default;
+    
+    const count = await Salon.countDocuments();
+    const salons = await Salon.find().limit(5);
+    
+    res.json({
+      dbName: mongoose.default.connection.db?.databaseName,
+      collectionName: "salons",
+      totalSalons: count,
+      sampleSalons: salons.map(s => ({
+        id: s._id,
+        name: s.name,
+        location: s.location,
+        type: s.type
+      }))
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch salons",
+      message: error.message,
+      stack: error.stack
+    });
+  }
+});
+
 
 // Middleware to ensure database connection before handling requests
 app.use(async (req, res, next) => {
