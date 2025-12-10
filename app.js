@@ -33,34 +33,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5173",
+  /\.vercel\.app$/, // Allow all Vercel deployments
+];
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        /\.vercel\.app$/, // Allow all Vercel deployments
-      ];
-      
-      const isAllowed = allowedOrigins.some(allowed => {
-        if (allowed instanceof RegExp) {
-          return allowed.test(origin);
-        }
-        return allowed === origin;
-      });
-      
-      if (isAllowed) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+      if (!origin) return callback(null, true); // allow non-browser requests
+      const allowed = allowedOrigins.some((o) =>
+        o instanceof RegExp ? o.test(origin) : o === origin
+      );
+      if (allowed) callback(null, true);
+      else callback(null, false); // just deny without throwing an Error
     },
     credentials: true,
   })
 );
+
+app.options("*", cors()); // allow preflight requests
+
 app.use(express.json());
 app.use(cookieParser()); // Added this middleware
 
@@ -86,10 +80,12 @@ app.get("/api/debug/env", async (req, res) => {
   try {
     await connectDB();
     const mongoose = await import("mongoose");
-    
+
     res.json({
       hasJwtSecret: !!process.env.JWT_SECRET,
-      jwtSecretLength: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+      jwtSecretLength: process.env.JWT_SECRET
+        ? process.env.JWT_SECRET.length
+        : 0,
       hasMongoUri: !!process.env.MONGO_URI,
       nodeEnv: process.env.NODE_ENV,
       dbConnectionState: mongoose.default.connection.readyState,
@@ -102,7 +98,7 @@ app.get("/api/debug/env", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       error: "Failed to connect to database",
-      message: error.message
+      message: error.message,
     });
   }
 });
@@ -112,31 +108,32 @@ app.get("/api/debug/salons", async (req, res) => {
   try {
     await connectDB();
     const mongoose = await import("mongoose");
-    const Salon = mongoose.default.models.Salon || (await import("./models/salon.js")).default;
-    
+    const Salon =
+      mongoose.default.models.Salon ||
+      (await import("./models/salon.js")).default;
+
     const count = await Salon.countDocuments();
     const salons = await Salon.find().limit(5);
-    
+
     res.json({
       dbName: mongoose.default.connection.db?.databaseName,
       collectionName: "salons",
       totalSalons: count,
-      sampleSalons: salons.map(s => ({
+      sampleSalons: salons.map((s) => ({
         id: s._id,
         name: s.name,
         location: s.location,
-        type: s.type
-      }))
+        type: s.type,
+      })),
     });
   } catch (error) {
     res.status(500).json({
       error: "Failed to fetch salons",
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     });
   }
 });
-
 
 // Middleware to ensure database connection before handling requests
 app.use(async (req, res, next) => {
@@ -180,17 +177,19 @@ app.use("/api", uploadRoutes);
 app.use(errorHandler);
 
 // For local development
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   const PORT_LOCAL = PORT || 5000;
   // Connect to DB immediately on startup for local dev
-  connectDB().then(() => {
-    app.listen(PORT_LOCAL, () => {
-      console.log(`Server running on port ${PORT_LOCAL}`);
+  connectDB()
+    .then(() => {
+      app.listen(PORT_LOCAL, () => {
+        console.log(`Server running on port ${PORT_LOCAL}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Failed to connect to DB on startup:", err);
+      process.exit(1);
     });
-  }).catch(err => {
-    console.error("Failed to connect to DB on startup:", err);
-    process.exit(1);
-  });
 }
 
 // Export for Vercel serverless functions
