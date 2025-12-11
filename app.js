@@ -53,7 +53,7 @@ app.use(
   })
 );
 
-app.options("*", cors()); // allow preflight requests
+app.options(/.*/, cors()); // allow preflight requests
 
 app.use(express.json());
 app.use(cookieParser()); // Added this middleware
