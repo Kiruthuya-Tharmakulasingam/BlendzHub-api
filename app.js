@@ -36,24 +36,24 @@ const PORT = process.env.PORT;
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  /\.vercel\.app$/, // Allow all Vercel deployments
+  "https://blendzhub-client.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // allow non-browser requests
-      const allowed = allowedOrigins.some((o) =>
-        o instanceof RegExp ? o.test(origin) : o === origin
-      );
-      if (allowed) callback(null, true);
-      else callback(null, false); // just deny without throwing an Error
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      console.log("CORS Blocked:", origin);
+      return callback(null, false);
     },
     credentials: true,
   })
 );
-
-app.options(/.*/, cors()); // allow preflight requests
 
 app.use(express.json());
 app.use(cookieParser()); // Added this middleware
