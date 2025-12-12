@@ -36,7 +36,8 @@ const PORT = process.env.PORT;
 const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:5173",
-  "https://blendzhub-client.vercel.app",
+  "https://blendzhub.vercel.app",
+  "https://blendzhub-api.vercel.app",
 ];
 
 app.use(
