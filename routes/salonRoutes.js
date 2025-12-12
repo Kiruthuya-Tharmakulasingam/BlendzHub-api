@@ -15,6 +15,6 @@ router.get("/:id", authOptional, getSalonById);
 
 router.post("/", authenticate, requireRole("owner"), createSalon);
 router.put("/:id", authenticate, requireRole("owner"), updateSalon);
-router.delete("/:id", authenticate, requireRole("owner"), deleteSalon);
+router.delete("/:id", authenticate, requireRole(["owner", "admin"]), deleteSalon);
 
 export default router;
